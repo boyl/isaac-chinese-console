@@ -4,7 +4,7 @@
 
 [下载最新正式版](https://github.com/boyl/isaac-chinese-console/releases/latest) · [完整使用教程](./README-使用教程.md) · [版本记录](./版本信息.txt)
 
-![批量执行演示](https://github.com/boyl/isaac-chinese-console/releases/download/v1.3.0/以撒中文控制台-v1.3.0-批量执行演示.gif)
+![批量执行演示](https://github.com/boyl/isaac-chinese-console/releases/download/v1.3.0/Isaac-Chinese-Console-v1.3.0-Demo.gif)
 
 ## 主要功能
 
