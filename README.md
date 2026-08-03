@@ -18,6 +18,7 @@
 
 ## 快速开始
 
+0. 输入法需切换为英文（半角）
 1. 从 [Releases](https://github.com/boyl/isaac-chinese-console/releases/latest) 下载 ZIP 并完整解压。
 2. 双击 `一键环境检测.cmd`。
 3. 关闭游戏后运行 `开启游戏控制台.cmd`，或手动将 `EnableDebugConsole` 改为 `1`。
