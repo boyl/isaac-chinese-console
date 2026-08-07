@@ -1,6 +1,9 @@
 *.zip
 *.tmp
 *.log
+dist/
+test-artifacts*/
+visual-qa/
 批量执行演示.gif
 Thumbs.db
 .DS_Store

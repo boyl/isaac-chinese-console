@@ -6,6 +6,9 @@ title 以撒中文控制台 - 启动器
 set "APP_DIR=%~dp0"
 set "ISAAC_UI=%APP_DIR%IsaacConsole.hta"
 set "ISAAC_HELPER=%APP_DIR%send-command.ps1"
+set "ISAAC_APP=%APP_DIR%desktop\app.js"
+set "ISAAC_CATALOG=%APP_DIR%desktop\catalog.js"
+set "ISAAC_IMPORTER=%APP_DIR%import-eid-catalog.ps1"
 
 where mshta.exe >nul 2>nul
 if errorlevel 1 (
@@ -34,6 +37,25 @@ if not exist "%ISAAC_HELPER%" (
   echo 请完整解压 ZIP；安全软件隔离脚本时请恢复该文件。
   pause
   exit /b 5
+)
+
+if not exist "%ISAAC_APP%" (
+  echo [错误] 缺少 desktop\app.js。
+  echo 请完整解压 ZIP，不要只复制 HTA 文件。
+  pause
+  exit /b 6
+)
+
+if not exist "%ISAAC_CATALOG%" (
+  echo [错误] 缺少 desktop\catalog.js。
+  pause
+  exit /b 7
+)
+
+if not exist "%ISAAC_IMPORTER%" (
+  echo [错误] 缺少 import-eid-catalog.ps1。
+  pause
+  exit /b 8
 )
 
 start "" "%SystemRoot%\System32\mshta.exe" "%ISAAC_UI%"
