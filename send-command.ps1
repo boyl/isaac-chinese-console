@@ -1,66 +1,178 @@
-param(
+﻿param(
     [string]$CommandFile,
-
-    [Parameter(Mandatory = $true)]
-    [string]$StatusFile,
-
+    [string]$JobFile,
+    [Parameter(Mandatory = $true)][string]$StatusFile,
+    [string]$CancelFile,
     [switch]$ProbeOnly,
-
     [switch]$ConsoleAlreadyOpen,
-
-    [int]$RepeatCount = 1
+    [int]$RepeatCount = 1,
+    [switch]$DryRun,
+    [int]$DryRunDelayMilliseconds = 0
 )
 
 $ErrorActionPreference = 'Stop'
+$script:JobId = ''
+$script:StepResults = [System.Collections.ArrayList]::new()
+$script:NormalizedSteps = @()
 
-function Write-IsaacStatus {
-    param([string]$Value)
-    try {
-        [System.IO.File]::WriteAllText($StatusFile, $Value, [System.Text.Encoding]::ASCII)
-    } catch {
-        # The UI also has a timeout fallback if the status file cannot be written.
+function Write-JsonStatus {
+    param(
+        [Parameter(Mandatory = $true)][string]$State,
+        [int]$CurrentStep = 0,
+        [int]$StepCount = 0,
+        [int]$RepeatDone = 0,
+        [int]$RepeatTotal = 0,
+        [string]$ErrorCode = '',
+        [bool]$CanResume = $false,
+        [object[]]$RemainingSteps = @()
+    )
+    $payload = [ordered]@{
+        schemaVersion = 1
+        jobId = $script:JobId
+        state = $State
+        currentStep = $CurrentStep
+        stepCount = $StepCount
+        repeatDone = $RepeatDone
+        repeatTotal = $RepeatTotal
+        submittedSteps = @($script:StepResults | Where-Object { $_.state -eq 'submitted' }).Count
+        errorCode = $ErrorCode
+        canResume = $CanResume
+        stepResults = @($script:StepResults)
+        remainingSteps = @($RemainingSteps)
+        timestamp = [DateTimeOffset]::Now.ToString('o')
     }
+    $json = $payload | ConvertTo-Json -Depth 8 -Compress
+    $temporary = $StatusFile + '.tmp'
+    [IO.File]::WriteAllText($temporary, $json, [Text.Encoding]::Unicode)
+    Move-Item -LiteralPath $temporary -Destination $StatusFile -Force
+}
+
+function Test-Cancelled {
+    return -not [string]::IsNullOrWhiteSpace($CancelFile) -and (Test-Path -LiteralPath $CancelFile)
+}
+
+function Get-RemainingSteps {
+    param([int]$StepIndex, [int]$SubmittedInStep)
+    $remaining = [Collections.Generic.List[object]]::new()
+    for ($index = $StepIndex; $index -lt $script:NormalizedSteps.Count; $index++) {
+        $step = $script:NormalizedSteps[$index]
+        $repeat = [int]$step.repeat
+        if ($index -eq $StepIndex) { $repeat = [Math]::Max(0, $repeat - $SubmittedInStep) }
+        if ($repeat -gt 0) {
+            $remaining.Add([ordered]@{
+                stepId = [string]$step.stepId
+                label = [string]$step.label
+                command = [string]$step.command
+                repeat = $repeat
+                source = [string]$step.source
+            })
+        }
+    }
+    return @($remaining)
+}
+
+function Add-StepResult {
+    param([object]$Step, [int]$Requested, [int]$Submitted, [string]$State, [string]$Note)
+    $null = $script:StepResults.Add([ordered]@{
+        stepId = [string]$Step.stepId
+        label = [string]$Step.label
+        command = [string]$Step.command
+        requested = $Requested
+        submitted = $Submitted
+        state = $State
+        note = $Note
+    })
 }
 
 try {
     if ($ProbeOnly) {
+        $script:JobId = 'probe'
         $probe = Get-Process -Name 'isaac-ng', 'isaac-ng-x64', 'isaac' -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($probe) { Write-IsaacStatus 'RUNNING' } else { Write-IsaacStatus 'STOPPED' }
+        $payload = [ordered]@{
+            schemaVersion = 1
+            jobId = 'probe'
+            state = 'completed'
+            running = [bool]$probe
+            processId = if ($probe) { $probe.Id } else { 0 }
+            timestamp = [DateTimeOffset]::Now.ToString('o')
+        } | ConvertTo-Json -Compress
+        $temporary = $StatusFile + '.tmp'
+        [IO.File]::WriteAllText($temporary, $payload, [Text.Encoding]::Unicode)
+        Move-Item -LiteralPath $temporary -Destination $StatusFile -Force
         exit 0
     }
 
-    if ([string]::IsNullOrWhiteSpace($CommandFile)) {
-        Write-IsaacStatus 'ERR|COMMAND_FILE'
-        exit 3
+    $rawJob = $null
+    if (-not [string]::IsNullOrWhiteSpace($JobFile)) {
+        if (-not (Test-Path -LiteralPath $JobFile -PathType Leaf)) { throw 'JOB_FILE' }
+        $rawJob = Get-Content -LiteralPath $JobFile -Raw | ConvertFrom-Json
+        if ([int]$rawJob.schemaVersion -ne 1) { throw 'JOB_SCHEMA' }
+        $script:JobId = [string]$rawJob.jobId
+        if ([string]::IsNullOrWhiteSpace($script:JobId)) { throw 'JOB_ID' }
+        $ConsoleAlreadyOpen = [string]$rawJob.consoleMode -eq 'open'
+        $rawSteps = @($rawJob.steps)
     }
-    if (-not (Test-Path -LiteralPath $CommandFile)) {
-        Write-IsaacStatus 'ERR|COMMAND_FILE'
-        exit 3
+    else {
+        if ([string]::IsNullOrWhiteSpace($CommandFile) -or -not (Test-Path -LiteralPath $CommandFile -PathType Leaf)) { throw 'COMMAND_FILE' }
+        $legacyCommand = (Get-Content -LiteralPath $CommandFile -Raw -Encoding Unicode).Trim()
+        $script:JobId = 'legacy-' + [DateTimeOffset]::Now.ToUnixTimeMilliseconds()
+        $rawSteps = @([pscustomobject]@{
+            stepId = 'legacy-step'
+            label = '旧版单命令'
+            command = $legacyCommand
+            repeat = $RepeatCount
+            source = 'legacy'
+        })
     }
 
-    $isaacCommand = (Get-Content -LiteralPath $CommandFile -Raw -Encoding Unicode).Trim()
-    Remove-Item -LiteralPath $CommandFile -Force -ErrorAction SilentlyContinue
+    if ($rawSteps.Count -lt 1 -or $rawSteps.Count -gt 200) { throw 'STEP_COUNT' }
+    $normalized = [Collections.Generic.List[object]]::new()
+    foreach ($step in $rawSteps) {
+        $command = ([string]$step.command).Trim()
+        if ([string]::IsNullOrWhiteSpace($command) -or $command.Length -gt 500 -or $command -match '[\r\n]') { throw 'INVALID_COMMAND' }
+        $requested = 1
+        if ($null -ne $step.repeat) { $requested = [int]$step.repeat }
+        if ($requested -lt 1 -or $requested -gt 99) { throw 'REPEAT_RANGE' }
+        $repeat = $requested
+        $limited = $false
+        if ($repeat -gt 1 -and $command -notmatch '^(giveitem|spawn)\s+') { $repeat = 1; $limited = $true }
+        $normalized.Add([pscustomobject]@{
+            stepId = if ([string]::IsNullOrWhiteSpace([string]$step.stepId)) { 'step-' + $normalized.Count } else { [string]$step.stepId }
+            label = if ([string]::IsNullOrWhiteSpace([string]$step.label)) { $command } else { ([string]$step.label).Substring(0, [Math]::Min(120, ([string]$step.label).Length)) }
+            command = $command
+            repeat = $repeat
+            requested = $requested
+            repeatLimited = $limited
+            source = [string]$step.source
+        })
+    }
+    $script:NormalizedSteps = @($normalized)
+    Write-JsonStatus -State 'running' -StepCount $script:NormalizedSteps.Count
 
-    if ([string]::IsNullOrWhiteSpace($isaacCommand)) {
-        Write-IsaacStatus 'ERR|EMPTY_COMMAND'
-        exit 4
-    }
-    if ($isaacCommand.Length -gt 500 -or $isaacCommand -match '[\r\n]') {
-        Write-IsaacStatus 'ERR|UNSAFE_COMMAND'
-        exit 5
-    }
-    if ($RepeatCount -lt 1 -or $RepeatCount -gt 99) {
-        Write-IsaacStatus 'ERR|REPEAT_RANGE'
-        exit 5
-    }
-    if ($RepeatCount -gt 1 -and $isaacCommand -notmatch '^(giveitem|spawn)\s+') {
-        Write-IsaacStatus 'ERR|REPEAT_NOT_ALLOWED'
-        exit 5
+    if ($DryRun) {
+        for ($stepIndex = 0; $stepIndex -lt $script:NormalizedSteps.Count; $stepIndex++) {
+            $step = $script:NormalizedSteps[$stepIndex]
+            $submitted = 0
+            for ($iteration = 1; $iteration -le [int]$step.repeat; $iteration++) {
+                if (Test-Cancelled) {
+                    if ($submitted -gt 0) { Add-StepResult $step ([int]$step.repeat) $submitted 'partial' 'DryRun cancelled' }
+                    $remaining = Get-RemainingSteps $stepIndex $submitted
+                    Write-JsonStatus -State 'cancelled' -CurrentStep ($stepIndex + 1) -StepCount $script:NormalizedSteps.Count -RepeatDone $submitted -RepeatTotal ([int]$step.repeat) -ErrorCode 'CANCELLED' -CanResume ($remaining.Count -gt 0) -RemainingSteps $remaining
+                    exit 0
+                }
+                if ($DryRunDelayMilliseconds -gt 0) { Start-Sleep -Milliseconds $DryRunDelayMilliseconds }
+                $submitted++
+                Write-JsonStatus -State 'running' -CurrentStep ($stepIndex + 1) -StepCount $script:NormalizedSteps.Count -RepeatDone $submitted -RepeatTotal ([int]$step.repeat)
+            }
+            Add-StepResult $step ([int]$step.repeat) $submitted 'submitted' $(if ($step.repeatLimited) { 'Repeat limited to one' } else { 'DryRun submitted' })
+        }
+        Write-JsonStatus -State 'completed' -CurrentStep $script:NormalizedSteps.Count -StepCount $script:NormalizedSteps.Count
+        exit 0
     }
 
     $isaac = Get-Process -Name 'isaac-ng', 'isaac-ng-x64', 'isaac' -ErrorAction SilentlyContinue | Select-Object -First 1
     if (-not $isaac) {
-        Write-IsaacStatus 'ERR|NO_GAME'
+        Write-JsonStatus -State 'failed' -StepCount $script:NormalizedSteps.Count -ErrorCode 'NO_GAME' -CanResume $true -RemainingSteps $script:NormalizedSteps
         exit 2
     }
 
@@ -257,91 +369,87 @@ public static class IsaacInput {
 }
 '@
 
-    # Find and activate the game without relying on Process.MainWindowHandle,
-    # which can be zero for SDL/full-screen windows on some systems.
     $gameWindow = [IsaacInput]::FindWindowForProcess([uint32]$isaac.Id)
     $focused = $false
-    if ($gameWindow -ne [IntPtr]::Zero) {
-        $focused = [IsaacInput]::ForceForeground($gameWindow, [uint32]$isaac.Id)
-    }
+    if ($gameWindow -ne [IntPtr]::Zero) { $focused = [IsaacInput]::ForceForeground($gameWindow, [uint32]$isaac.Id) }
     if (-not $focused) {
         try {
             $wshell = New-Object -ComObject WScript.Shell
             $null = $wshell.AppActivate($isaac.Id)
             Start-Sleep -Milliseconds 220
             $focused = [IsaacInput]::IsForegroundProcess([uint32]$isaac.Id)
-        } catch {
-            $focused = $false
-        }
+        } catch { $focused = $false }
     }
     if (-not $focused) {
-        Write-IsaacStatus $(if ($gameWindow -eq [IntPtr]::Zero) { 'ERR|NO_WINDOW' } else { 'ERR|FOCUS_FAILED' })
+        $code = if ($gameWindow -eq [IntPtr]::Zero) { 'NO_WINDOW' } else { 'FOCUS_FAILED' }
+        Write-JsonStatus -State 'failed' -StepCount $script:NormalizedSteps.Count -ErrorCode $code -CanResume $true -RemainingSteps $script:NormalizedSteps
         exit 6
     }
     Start-Sleep -Milliseconds 320
 
-    if (-not [IsaacInput]::IsForegroundProcess([uint32]$isaac.Id)) {
-        Write-IsaacStatus 'ERR|FOCUS_LOST'
-        exit 8
-    }
     if (-not $ConsoleAlreadyOpen) {
-        # Scan code 0x29 is the physical top-left ` / ~ key and is independent
-        # of the active Chinese/English keyboard layout.
         if (-not [IsaacInput]::TapScanCode(0x29)) {
-            Write-IsaacStatus 'ERR|INPUT_BLOCKED'
+            Write-JsonStatus -State 'failed' -StepCount $script:NormalizedSteps.Count -ErrorCode 'INPUT_BLOCKED' -CanResume $true -RemainingSteps $script:NormalizedSteps
             exit 7
         }
         Start-Sleep -Milliseconds 480
     }
-    if (-not [IsaacInput]::IsForegroundProcess([uint32]$isaac.Id)) {
-        Write-IsaacStatus 'ERR|FOCUS_LOST'
-        exit 8
-    }
-    # Clear once before the batch starts. Enter leaves a fresh prompt after
-    # every successful command, so the console stays open for the whole batch.
     [IsaacInput]::ClearConsoleLine()
 
-    $completed = 0
-    for ($iteration = 1; $iteration -le $RepeatCount; $iteration++) {
-        if (-not [IsaacInput]::IsForegroundProcess([uint32]$isaac.Id)) {
-            if ($completed -gt 0) { Write-IsaacStatus ("PARTIAL|{0}|{1}|FOCUS_LOST" -f $completed, $RepeatCount) }
-            else { Write-IsaacStatus 'ERR|FOCUS_LOST' }
-            exit 8
+    for ($stepIndex = 0; $stepIndex -lt $script:NormalizedSteps.Count; $stepIndex++) {
+        $step = $script:NormalizedSteps[$stepIndex]
+        $submitted = 0
+        if ($stepIndex -gt 0) { [IsaacInput]::ClearConsoleLine() }
+        for ($iteration = 1; $iteration -le [int]$step.repeat; $iteration++) {
+            if (Test-Cancelled) {
+                if ([IsaacInput]::IsForegroundProcess([uint32]$isaac.Id)) { [IsaacInput]::TapScanCode(0x01) | Out-Null }
+                if ($submitted -gt 0) { Add-StepResult $step ([int]$step.repeat) $submitted 'partial' '用户取消' }
+                $remaining = Get-RemainingSteps $stepIndex $submitted
+                Write-JsonStatus -State 'cancelled' -CurrentStep ($stepIndex + 1) -StepCount $script:NormalizedSteps.Count -RepeatDone $submitted -RepeatTotal ([int]$step.repeat) -ErrorCode 'CANCELLED' -CanResume ($remaining.Count -gt 0) -RemainingSteps $remaining
+                exit 0
+            }
+            if (-not [IsaacInput]::IsForegroundProcess([uint32]$isaac.Id)) {
+                if ($submitted -gt 0) { Add-StepResult $step ([int]$step.repeat) $submitted 'partial' '游戏失去焦点' }
+                $remaining = Get-RemainingSteps $stepIndex $submitted
+                Write-JsonStatus -State $(if ($script:StepResults.Count -gt 0 -or $submitted -gt 0) { 'partial' } else { 'failed' }) -CurrentStep ($stepIndex + 1) -StepCount $script:NormalizedSteps.Count -RepeatDone $submitted -RepeatTotal ([int]$step.repeat) -ErrorCode 'FOCUS_LOST' -CanResume $true -RemainingSteps $remaining
+                exit 8
+            }
+            if (-not [IsaacInput]::SendVirtualText([string]$step.command)) {
+                [IsaacInput]::TapScanCode(0x01) | Out-Null
+                if ($submitted -gt 0) { Add-StepResult $step ([int]$step.repeat) $submitted 'partial' '输入被拦截' }
+                $remaining = Get-RemainingSteps $stepIndex $submitted
+                Write-JsonStatus -State $(if ($script:StepResults.Count -gt 0 -or $submitted -gt 0) { 'partial' } else { 'failed' }) -CurrentStep ($stepIndex + 1) -StepCount $script:NormalizedSteps.Count -RepeatDone $submitted -RepeatTotal ([int]$step.repeat) -ErrorCode 'INPUT_BLOCKED' -CanResume $true -RemainingSteps $remaining
+                exit 7
+            }
+            Start-Sleep -Milliseconds 140
+            if (-not [IsaacInput]::TapScanCode(0x1C)) {
+                [IsaacInput]::TapScanCode(0x01) | Out-Null
+                $remaining = Get-RemainingSteps $stepIndex $submitted
+                Write-JsonStatus -State $(if ($script:StepResults.Count -gt 0) { 'partial' } else { 'failed' }) -CurrentStep ($stepIndex + 1) -StepCount $script:NormalizedSteps.Count -RepeatDone $submitted -RepeatTotal ([int]$step.repeat) -ErrorCode 'INPUT_BLOCKED' -CanResume $true -RemainingSteps $remaining
+                exit 7
+            }
+            $submitted++
+            Write-JsonStatus -State 'running' -CurrentStep ($stepIndex + 1) -StepCount $script:NormalizedSteps.Count -RepeatDone $submitted -RepeatTotal ([int]$step.repeat)
+            if ($iteration -lt [int]$step.repeat) { Start-Sleep -Milliseconds 220 }
         }
-        if (-not [IsaacInput]::SendVirtualText($isaacCommand)) {
-            [IsaacInput]::TapScanCode(0x01) | Out-Null
-            if ($completed -gt 0) { Write-IsaacStatus ("PARTIAL|{0}|{1}|INPUT_BLOCKED" -f $completed, $RepeatCount) }
-            else { Write-IsaacStatus 'ERR|INPUT_BLOCKED' }
-            exit 7
-        }
-        Start-Sleep -Milliseconds 140
-        if (-not [IsaacInput]::TapScanCode(0x1C)) {
-            [IsaacInput]::TapScanCode(0x01) | Out-Null
-            if ($completed -gt 0) { Write-IsaacStatus ("PARTIAL|{0}|{1}|INPUT_BLOCKED" -f $completed, $RepeatCount) }
-            else { Write-IsaacStatus 'ERR|INPUT_BLOCKED' }
-            exit 7
-        }
-        $completed = $iteration
-        Write-IsaacStatus ("PROGRESS|{0}|{1}" -f $completed, $RepeatCount)
-        if ($iteration -lt $RepeatCount) { Start-Sleep -Milliseconds 220 }
+        Add-StepResult $step ([int]$step.repeat) $submitted 'submitted' $(if ($step.repeatLimited) { '按安全规则仅提交一次' } else { '输入已提交；请在游戏内确认实际效果' })
     }
-    # Enter executes the command but leaves Isaac's console open. Do not press
-    # the ` / ~ hotkey again here: while the edit line has focus Isaac treats
-    # it as literal text. Escape closes the console without adding a character.
-    Start-Sleep -Milliseconds 650
-    if (-not [IsaacInput]::TapScanCode(0x01)) {
-        Write-IsaacStatus ("SENT|CLOSE_FAILED|{0}" -f $completed)
-        exit 0
-    }
-    Start-Sleep -Milliseconds 180
 
-    Write-IsaacStatus ("SENT|CLOSED|{0}" -f $completed)
+    Start-Sleep -Milliseconds 650
+    $closed = [IsaacInput]::IsForegroundProcess([uint32]$isaac.Id) -and [IsaacInput]::TapScanCode(0x01)
+    Start-Sleep -Milliseconds 180
+    Write-JsonStatus -State 'completed' -CurrentStep $script:NormalizedSteps.Count -StepCount $script:NormalizedSteps.Count -ErrorCode $(if ($closed) { '' } else { 'CLOSE_FAILED' })
     exit 0
-} catch {
-    Write-IsaacStatus ('ERR|HELPER|' + $_.Exception.GetType().Name)
+}
+catch {
+    if ([string]::IsNullOrWhiteSpace($script:JobId)) { $script:JobId = 'invalid-job' }
+    $code = $_.Exception.Message
+    if ($code -notmatch '^[A-Z_]+$') { $code = 'HELPER_' + $_.Exception.GetType().Name }
+    try { Write-JsonStatus -State 'failed' -StepCount $script:NormalizedSteps.Count -ErrorCode $code -CanResume ($script:NormalizedSteps.Count -gt 0) -RemainingSteps $script:NormalizedSteps } catch {}
     exit 1
-} finally {
-    if (-not [string]::IsNullOrWhiteSpace($CommandFile)) {
-        Remove-Item -LiteralPath $CommandFile -Force -ErrorAction SilentlyContinue
+}
+finally {
+    foreach ($path in @($CommandFile, $JobFile)) {
+        if (-not [string]::IsNullOrWhiteSpace($path)) { Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue }
     }
 }
