@@ -34,6 +34,8 @@ if (Get-Command mshta.exe -ErrorAction SilentlyContinue) {
 
 foreach ($required in @(
     'IsaacConsole.hta',
+    'START.cmd',
+    'start-console.ps1',
     'send-command.ps1',
     'import-eid-catalog.ps1',
     'desktop\app.css',
@@ -52,6 +54,15 @@ foreach ($required in @(
     }
 }
 
+try {
+    $fsoProbe = New-Object -ComObject Scripting.FileSystemObject
+    $shellProbe = New-Object -ComObject WScript.Shell
+    if ($fsoProbe -and $shellProbe) { Add-CheckLine '通过' 'Windows 脚本桥可用（FileSystemObject / WScript.Shell）。' }
+}
+catch {
+    Add-CheckLine '错误' ('Windows 脚本桥被系统或安全软件拦截：' + $_.Exception.Message)
+}
+
 $stateDir = Join-Path $env:LOCALAPPDATA 'IsaacChineseConsole'
 try {
     if (-not (Test-Path -LiteralPath $stateDir)) { New-Item -ItemType Directory -Path $stateDir | Out-Null }
@@ -65,6 +76,10 @@ catch {
 }
 
 $catalogCache = Join-Path $stateDir 'catalog-cache-v1.json'
+$startupLog = Join-Path $stateDir 'startup-error.log'
+if (Test-Path -LiteralPath $startupLog) {
+    Add-CheckLine '警告' ("检测到 HTA 启动错误日志：{0}" -f $startupLog)
+}
 if (Test-Path -LiteralPath $catalogCache) {
     try {
         $cache = Get-Content -LiteralPath $catalogCache -Raw | ConvertFrom-Json

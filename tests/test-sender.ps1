@@ -2,7 +2,8 @@
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $sender = Join-Path $root 'send-command.ps1'
 $pwsh = 'C:\Program Files\PowerShell\7\pwsh.exe'
-$testRoot = Join-Path ([IO.Path]::GetTempPath()) ('isaac-console-sender-tests-' + [guid]::NewGuid().ToString('N'))
+$testParent = Join-Path $root 'test-artifacts'
+$testRoot = Join-Path $testParent ('sender-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $testRoot | Out-Null
 
 function Assert-True([bool]$Condition, [string]$Message) {
@@ -63,8 +64,8 @@ try {
 }
 finally {
     $resolved = [IO.Path]::GetFullPath($testRoot)
-    $temp = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
-    if ($resolved.StartsWith($temp, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $resolved)) {
+    $safeParent = [IO.Path]::GetFullPath($testParent)
+    if ($resolved.StartsWith($safeParent + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $resolved)) {
         Remove-Item -LiteralPath $resolved -Recurse -Force
     }
 }

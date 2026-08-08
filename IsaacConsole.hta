@@ -3,9 +3,32 @@
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>以撒 · 中文控制台 desktop-v1.4.0</title>
+  <title>以撒 · 中文控制台 desktop-v1.4.2</title>
   <HTA:APPLICATION ID="IsaacConsole" APPLICATIONNAME="Isaac 中文控制台" BORDER="thin" CAPTION="yes" MAXIMIZEBUTTON="yes" MINIMIZEBUTTON="yes" SCROLL="no" SINGLEINSTANCE="yes" WINDOWSTATE="normal" />
   <link rel="stylesheet" type="text/css" href="desktop/app.css" />
+  <script type="text/javascript">
+    window.onerror = function (message, source, line) {
+      var detail = "启动脚本错误：" + message + "\r\n文件：" + source + "\r\n行号：" + line;
+      var logPath = "%LOCALAPPDATA%\\IsaacChineseConsole\\startup-error.log";
+      try {
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var shell = new ActiveXObject("WScript.Shell");
+        var folder = shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") + "\\IsaacChineseConsole";
+        if (!fso.FolderExists(folder)) fso.CreateFolder(folder);
+        logPath = fso.BuildPath(folder, "startup-error.log");
+        var file = fso.CreateTextFile(logPath, true, true);
+        file.WriteLine(new Date().toLocaleString());
+        file.Write(detail);
+        file.Close();
+      } catch (ignore) {}
+      try {
+        document.body.innerHTML = '<div style="font-family:Segoe UI,Microsoft YaHei,sans-serif;padding:32px;background:#17131f;color:#f2e9dc;min-height:100%">' +
+          '<h2 style="color:#e39b6d">控制台界面初始化失败</h2><p>请把下面的信息发回来：</p><pre style="white-space:pre-wrap;background:#251e30;padding:16px;border:1px solid #59476d">' +
+          String(detail).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + '</pre><p>诊断日志：' + logPath + '</p></div>';
+      } catch (ignore2) {}
+      return true;
+    };
+  </script>
 </head>
 <body>
   <div class="app">
@@ -13,7 +36,7 @@
       <div class="brand">
         <div class="brand-top">BINDING TOOLS</div>
         <div class="brand-title">以撒 · 控制台</div>
-        <div class="brand-sub">desktop-v1.4.0 · 离线独立版</div>
+        <div class="brand-sub">desktop-v1.4.2 · 自检启动版</div>
       </div>
       <div class="nav" id="nav"></div>
       <div class="status-box">

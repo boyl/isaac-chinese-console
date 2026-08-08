@@ -1,8 +1,11 @@
-# 以撒中文控制台 desktop-v1.4.0
+# 以撒中文控制台 desktop-v1.4.2
 
 面向 Windows / Steam 版《The Binding of Isaac: Rebirth》的离线中文图形控制台。无需安装 Mod，不联网、不读取存档；工具会切换到游戏窗口并通过原生调试控制台提交命令。
 
 ## 本版重点
+
+- v1.4.2 改用纯英文 `START.cmd` 和 PowerShell 自检启动器；只有检测到真实可见窗口才报告成功。
+- Windows 脚本组件或 LocalAppData 被策略拦截时，界面进入可浏览的临时模式并显示明确诊断。
 
 - 保留 v1.3.0 原有 11 个分类、74 个精选道具及排列顺序。
 - 支持从用户本机的 External Item Descriptions（EID）离线导入 732 个道具的中英文名、可用说明、全拼和首字母；缓存仅保存在 `%LOCALAPPDATA%\IsaacChineseConsole`。
@@ -17,7 +20,7 @@
 1. 完整解压发布 ZIP。
 2. 双击 `一键环境检测.cmd`。
 3. 关闭游戏后运行 `开启游戏控制台.cmd`，确保 `EnableDebugConsole=1`。
-4. 启动游戏并进入一局，再双击 `启动以撒中文控制台.cmd`。
+4. 启动游戏并进入一局，再在文件资源管理器中双击 `START.cmd`。聊天中的文件链接可能只会选中文件，不会执行脚本。
 5. 可直接使用 74 个精选道具；点击“导入 EID”可启用完整中文目录。
 
 完整说明见 [README-使用教程.md](./README-使用教程.md)。

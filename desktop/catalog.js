@@ -1,7 +1,7 @@
 (function (root) {
   "use strict";
   root.IsaacCatalog = {
-    version: "desktop-v1.4.0",
+    version: "desktop-v1.4.2",
     categories: [
       {
         "id": "featured",
@@ -1419,4 +1419,3 @@
     ]
   };
 }(window));
-

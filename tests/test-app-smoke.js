@@ -41,6 +41,7 @@ window.window = window;
 
 const context = {
   window, document, location: window.location, screen: window.screen,
+  ActiveXObject() { throw new Error("ActiveX blocked by policy"); },
   setTimeout, clearTimeout, setInterval: window.setInterval, clearInterval: window.clearInterval,
   confirm: window.confirm, prompt: window.prompt, console
 };
@@ -50,6 +51,8 @@ for (const file of [
 ]) vm.runInContext(fs.readFileSync(file, "utf8"), context, { filename: file });
 
 window.onload();
+assert(window.IsaacState.isMemoryMode(), "blocked ActiveX did not fall back to memory mode");
+assert(elements.statusText.innerText === "脚本组件被系统拦截", "blocked script bridge was not reported");
 assert(elements.nav.innerHTML.includes("常用精选"), "navigation did not render");
 assert(elements.cards.innerHTML.includes("圣心"), "featured cards did not render");
 assert(elements.resultCount.innerText === "12 项", "default featured count changed");

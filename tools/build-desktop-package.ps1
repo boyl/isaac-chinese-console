@@ -1,6 +1,6 @@
 ﻿param(
     [string]$OutputRoot = (Join-Path (Split-Path -Parent $PSScriptRoot) 'dist'),
-    [string]$Version = 'desktop-v1.4.0'
+    [string]$Version = 'desktop-v1.4.2'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -9,8 +9,8 @@ $outputRootFull = [IO.Path]::GetFullPath($OutputRoot)
 $package = Join-Path $outputRootFull ('isaac-chinese-console-' + $Version)
 $archive = $package + '.zip'
 $allowlist = @(
-    'IsaacConsole.hta','send-command.ps1','import-eid-catalog.ps1','README.md','README-使用教程.md',
-    '版本信息.txt','常见问题.txt','RELEASE-desktop-v1.4.0.md','环境检测.ps1','开启游戏控制台.cmd','启动以撒中文控制台.cmd','一键环境检测.cmd',
+    'IsaacConsole.hta','send-command.ps1','import-eid-catalog.ps1','START.cmd','start-console.ps1','README.md','README-使用教程.md',
+    '版本信息.txt','常见问题.txt','RELEASE-desktop-v1.4.2.md','环境检测.ps1','开启游戏控制台.cmd','启动以撒中文控制台.cmd','一键环境检测.cmd',
     'desktop\app.css','desktop\app.js','desktop\catalog.js','desktop\curated-aliases.js',
     'desktop\state.js','desktop\search.js','desktop\queue.js','desktop\generate-pinyin-aliases.ps1'
 )

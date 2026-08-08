@@ -1,4 +1,8 @@
-以撒中文控制台 desktop-v1.4.0 · 常见问题
+以撒中文控制台 desktop-v1.4.2 · 常见问题
+
+0. 双击后没有窗口怎么办？
+先完整解压 ZIP，再在文件资源管理器中双击 START.cmd。不要从聊天文件链接或 ZIP 预览窗口直接执行。
+如果仍失败，请发送：%LOCALAPPDATA%\IsaacChineseConsole\launcher.log
 
 1. 没有安装 EID 能用吗？
 可以。74 个精选道具、68 个控制台操作、队列和手动命令都不依赖 EID。EID 只增强完整目录与搜索。

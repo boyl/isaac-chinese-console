@@ -13,11 +13,17 @@
   var catalogPath = "";
   var state = null;
   var memoryMode = false;
+  var startupError = "";
 
   function objects() {
     if (typeof ActiveXObject === "undefined") { memoryMode = true; return; }
-    if (!fso) fso = new ActiveXObject("Scripting.FileSystemObject");
-    if (!shell) shell = new ActiveXObject("WScript.Shell");
+    try {
+      if (!fso) fso = new ActiveXObject("Scripting.FileSystemObject");
+      if (!shell) shell = new ActiveXObject("WScript.Shell");
+    } catch (error) {
+      fso = null; shell = null; memoryMode = true;
+      startupError = String(error && (error.description || error.message) || "ActiveX unavailable");
+    }
   }
 
   function defaults() {
@@ -137,15 +143,24 @@
   function init() {
     objects();
     if (memoryMode) { state = defaults(); return state; }
-    baseDir = shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") + "\\IsaacChineseConsole";
-    ensureFolder(baseDir);
-    statePath = baseDir + "\\state-v2.json";
-    backupPath = baseDir + "\\state-v2.json.bak";
-    catalogPath = baseDir + "\\catalog-cache-v1.json";
-    var loaded = parse(readText(statePath), null);
-    if (!loaded) loaded = parse(readText(backupPath), null);
-    state = loaded ? normalize(loaded) : migrateLegacy();
-    save();
+    try {
+      baseDir = shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") + "\\IsaacChineseConsole";
+      ensureFolder(baseDir);
+      statePath = baseDir + "\\state-v2.json";
+      backupPath = baseDir + "\\state-v2.json.bak";
+      catalogPath = baseDir + "\\catalog-cache-v1.json";
+      var loaded = parse(readText(statePath), null);
+      if (!loaded) loaded = parse(readText(backupPath), null);
+      state = loaded ? normalize(loaded) : migrateLegacy();
+      save();
+      var oldStartupLog = baseDir + "\\startup-error.log";
+      if (fso.FileExists(oldStartupLog)) fso.DeleteFile(oldStartupLog, true);
+    } catch (error) {
+      fso = null; shell = null; memoryMode = true;
+      startupError = String(error && (error.description || error.message) || "LocalAppData unavailable");
+      baseDir = ""; statePath = ""; backupPath = ""; catalogPath = "";
+      state = defaults();
+    }
     return state;
   }
 
@@ -205,6 +220,7 @@
     getStatePath: function () { return statePath; },
     getCatalogPath: function () { return catalogPath; },
     getBaseDir: function () { return baseDir; },
-    isMemoryMode: function () { return memoryMode; }
+    isMemoryMode: function () { return memoryMode; },
+    getStartupError: function () { return startupError; }
   };
 }(window));

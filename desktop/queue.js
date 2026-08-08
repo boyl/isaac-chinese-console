@@ -6,8 +6,10 @@
 
   function objects() {
     if (typeof ActiveXObject === "undefined") { bridgeAvailable = false; return; }
-    if (!fso) fso = new ActiveXObject("Scripting.FileSystemObject");
-    if (!shell) shell = new ActiveXObject("WScript.Shell");
+    try {
+      if (!fso) fso = new ActiveXObject("Scripting.FileSystemObject");
+      if (!shell) shell = new ActiveXObject("WScript.Shell");
+    } catch (ignore) { fso = null; shell = null; bridgeAvailable = false; }
   }
   function trim(value) { return String(value || "").replace(/^\s+|\s+$/g, ""); }
   function safeRepeat(command) { return /^\s*(giveitem|spawn)\s+/i.test(String(command || "")); }
@@ -118,6 +120,7 @@
     var clean = root.IsaacState.normalizeSteps(sourceSteps);
     if (!clean.length) return { ok: false, code: "EMPTY_QUEUE" };
     objects();
+    if (!bridgeAvailable) return { ok: false, code: "NO_BRIDGE" };
     var temp = fso.GetSpecialFolder(2).Path, jobId = id("job"), totalRepeats = 0;
     for (var repeatIndex = 0; repeatIndex < clean.length; repeatIndex++) totalRepeats += clean[repeatIndex].repeat;
     var run = {
@@ -143,6 +146,7 @@
   function probe(callback) {
     if (typeof ActiveXObject === "undefined") { callback(false, { errorCode: "NO_BRIDGE" }); return; }
     objects();
+    if (!bridgeAvailable) { callback(false, { errorCode: "NO_BRIDGE" }); return; }
     var temp = fso.GetSpecialFolder(2).Path, probeId = id("probe"), path = fso.BuildPath(temp, "isaac-cn-" + probeId + ".json");
     var command = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ' + quote(appDir + "\\send-command.ps1") + ' -ProbeOnly -StatusFile ' + quote(path);
     shell.Run(command, 0, false);
@@ -162,6 +166,7 @@
   root.IsaacQueue = {
     init: function (rootDir, handlers) {
       appDir = rootDir; handlers = handlers || {};
+      objects();
       onChanged = handlers.changed || onChanged; onProgress = handlers.progress || onProgress; onFinished = handlers.finished || onFinished;
       steps = root.IsaacState.normalizeSteps(root.IsaacState.get().queueDraft); onChanged(steps);
     },

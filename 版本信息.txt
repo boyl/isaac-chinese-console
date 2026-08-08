@@ -1,9 +1,13 @@
-以撒中文控制台 desktop-v1.4.0
+以撒中文控制台 desktop-v1.4.2
 
 产品线：外部 HTA 独立控制台
 运行要求：Windows 10/11、Windows PowerShell 5.1、mshta.exe
 
 本版新增：
+- 增加纯英文 START.cmd 与自检 PowerShell 启动器，规避中文 CMD、聊天链接和静默启动失败。
+- 启动成功必须检测到真实可见 HTA 窗口；失败会保留 launcher.log 与 launcher-status.json。
+- 修复 ActiveX/Windows 脚本组件或 LocalAppData 被策略拦截时界面初始化中断的问题。
+- 受限环境自动进入临时浏览模式，并显示启动错误日志位置。
 - 保持原 11 个分类及 74 个精选道具不变。
 - 本机 EID 离线导入：最多 732 个官方道具，中英文、说明、拼音和首字母搜索。
 - 68 个控制台操作；楼层为 45 项普通模式与 7 项贪婪模式显式白名单。

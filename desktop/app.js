@@ -163,7 +163,7 @@
   function sendSteps(values) {
     var mode = el("sendMode").value; state.ui.consoleMode = mode; root.IsaacState.save();
     var result = root.IsaacQueue.execute(values, mode, false);
-    if (!result.ok) toast(result.code === "BUSY" ? "上一项任务仍在发送。" : "没有可执行的命令。", "warn");
+    if (!result.ok) toast(result.code === "NO_BRIDGE" ? "Windows 脚本组件被拦截，当前无法发送命令。" : (result.code === "BUSY" ? "上一项任务仍在发送。" : "没有可执行的命令。"), "warn");
     else { toast("任务已提交给发送器。", "ok"); openQueue(); }
   }
   function sendEntry(index) { var entry = entryAt(index); if (!entry) return; setManual(entry); var count = normalizeManualRepeat(); sendSteps([{stepId:"direct-"+new Date().getTime(),label:entry.name,command:entry.command||entry.cmd,repeat:count,source:entry.kind}]); }
@@ -249,7 +249,10 @@
       if (dialog) runImport(dialog.Self.Path); else toast("未选择 EID 目录，继续使用 74 项精选。", "warn");
     } catch (ignore) { toast("未找到 EID，继续使用 74 项精选。", "warn"); }
   }
-  function importCatalog() { runImport(""); }
+  function importCatalog() {
+    if (!root.IsaacQueue.bridgeAvailable() || root.IsaacState.isMemoryMode()) { toast("Windows 脚本组件被拦截，当前只能浏览内置目录。请运行一键环境检测。", "warn"); return; }
+    runImport("");
+  }
 
   function onQueueProgress(status) {
     var node = el("queueProgress"); node.style.display = "block";
@@ -270,9 +273,9 @@
   }
   function updateGameStatus() {
     if (root.IsaacQueue.isBusy()) return;
-    root.IsaacQueue.probe(function (running) {
+    root.IsaacQueue.probe(function (running, status) {
       el("statusDot").className = "status-dot" + (running ? " online" : "");
-      el("statusText").innerText = running ? "游戏运行中" : "未检测到游戏";
+      el("statusText").innerText = status && status.errorCode === "NO_BRIDGE" ? "脚本组件被系统拦截" : (running ? "游戏运行中" : "未检测到游戏");
     });
   }
 
@@ -291,6 +294,7 @@
     try { window.resizeTo(1280, 840); window.moveTo(Math.max(0,(screen.availWidth-1280)/2), Math.max(0,(screen.availHeight-840)/2)); } catch (ignore) {}
     state = root.IsaacState.init(); currentCategory = validCategory(state.ui.lastCategory) ? state.ui.lastCategory : "featured"; stageMode = state.ui.stageMode; el("sendMode").value = state.ui.consoleMode;
     loadCatalog();
+    if (root.IsaacState.isMemoryMode()) el("catalogStatus").innerText += " · 临时浏览模式";
     root.IsaacQueue.init(appDir(), { changed: function () { renderQueue(); }, progress: onQueueProgress, finished: onQueueFinished });
     renderAll(); updateGameStatus(); setInterval(updateGameStatus, 4000);
     el("search").onkeyup = function () { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(function () { currentPage = 1; selectedIndex = 0; renderCards(); }, 120); };
