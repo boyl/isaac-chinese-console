@@ -2,6 +2,12 @@
 
 面向 Windows / Steam 版《The Binding of Isaac: Rebirth》的离线中文图形控制台。无需安装 Mod，不联网、不读取存档；工具会切换到游戏窗口并通过原生调试控制台提交命令。
 
+## 下载
+
+- 推荐下载：[isaac-chinese-console-desktop-v1.4.3.zip](https://github.com/boyl/isaac-chinese-console/releases/download/desktop-v1.4.3/isaac-chinese-console-desktop-v1.4.3.zip)
+- 版本说明：[desktop-v1.4.3 Release](https://github.com/boyl/isaac-chinese-console/releases/tag/desktop-v1.4.3)
+- 下载后必须完整解压，再从解压目录运行 `START.cmd`；不要在 ZIP 预览窗口内启动。
+
 ## 本版重点
 
 - v1.4.3 修复拆分后的外部脚本无法访问 HTA COM 对象、导致命令发送被误判为不可用的问题。
@@ -34,6 +40,7 @@
 - 新增 HTA 内联宿主桥，状态持久化、游戏检测、命令队列和 EID 导入统一复用经过验证的 COM 对象。
 - 增加宿主桥回归测试，覆盖外部模块没有全局 `ActiveXObject` 的真实 Trident/HTA 场景。
 - 已完成 Windows 实机启动与命令发送验收；分类、74 个精选道具、68 个控制台操作和命令语义保持不变。
+- 补充正式 Release 下载入口、安装说明和分发包校验信息。
 
 ### desktop-v1.4.2（2026-08-08）
 
