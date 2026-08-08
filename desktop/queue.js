@@ -1,15 +1,16 @@
 (function (root) {
   "use strict";
 
-  var fso = null, shell = null, appDir = "", steps = [], active = null, pollTimer = null, bridgeAvailable = true;
+  var fso = null, shell = null, appDir = "", steps = [], active = null, pollTimer = null, bridgeAvailable = true, bridgeError = "";
   var onChanged = function () {}, onProgress = function () {}, onFinished = function () {};
 
   function objects() {
-    if (typeof ActiveXObject === "undefined") { bridgeAvailable = false; return; }
-    try {
-      if (!fso) fso = new ActiveXObject("Scripting.FileSystemObject");
-      if (!shell) shell = new ActiveXObject("WScript.Shell");
-    } catch (ignore) { fso = null; shell = null; bridgeAvailable = false; }
+    var host = root.IsaacHost;
+    if (host && host.available && host.fso && host.shell) {
+      fso = host.fso; shell = host.shell; bridgeAvailable = true; bridgeError = ""; return;
+    }
+    fso = null; shell = null; bridgeAvailable = false;
+    bridgeError = String(host && host.error || "HTA 宿主桥不可用");
   }
   function trim(value) { return String(value || "").replace(/^\s+|\s+$/g, ""); }
   function safeRepeat(command) { return /^\s*(giveitem|spawn)\s+/i.test(String(command || "")); }
@@ -115,7 +116,6 @@
     pollTimer = setTimeout(poll, 140);
   }
   function execute(sourceSteps, consoleMode, dryRun) {
-    if (typeof ActiveXObject === "undefined") return { ok: false, code: "NO_BRIDGE" };
     if (active) return { ok: false, code: "BUSY" };
     var clean = root.IsaacState.normalizeSteps(sourceSteps);
     if (!clean.length) return { ok: false, code: "EMPTY_QUEUE" };
@@ -144,7 +144,6 @@
     try { writeText(active.cancelPath, "cancel"); return true; } catch (ignore) { return false; }
   }
   function probe(callback) {
-    if (typeof ActiveXObject === "undefined") { callback(false, { errorCode: "NO_BRIDGE" }); return; }
     objects();
     if (!bridgeAvailable) { callback(false, { errorCode: "NO_BRIDGE" }); return; }
     var temp = fso.GetSpecialFolder(2).Path, probeId = id("probe"), path = fso.BuildPath(temp, "isaac-cn-" + probeId + ".json");
@@ -175,6 +174,7 @@
     risk: risk, safeRepeat: safeRepeat, execute: execute, cancel: cancel, probe: probe,
     isBusy: function () { return !!active; },
     copyText: function (value) { try { window.clipboardData.setData("Text", String(value)); return true; } catch (ignore) { return false; } },
-    bridgeAvailable: function () { return bridgeAvailable; }
+    bridgeAvailable: function () { return bridgeAvailable; },
+    getBridgeError: function () { return bridgeError; }
   };
 }(window));

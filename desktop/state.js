@@ -16,14 +16,12 @@
   var startupError = "";
 
   function objects() {
-    if (typeof ActiveXObject === "undefined") { memoryMode = true; return; }
-    try {
-      if (!fso) fso = new ActiveXObject("Scripting.FileSystemObject");
-      if (!shell) shell = new ActiveXObject("WScript.Shell");
-    } catch (error) {
-      fso = null; shell = null; memoryMode = true;
-      startupError = String(error && (error.description || error.message) || "ActiveX unavailable");
+    var host = root.IsaacHost;
+    if (host && host.available && host.fso && host.shell) {
+      fso = host.fso; shell = host.shell; memoryMode = false; startupError = ""; return;
     }
+    fso = null; shell = null; memoryMode = true;
+    startupError = String(host && host.error || "HTA 宿主桥不可用");
   }
 
   function defaults() {

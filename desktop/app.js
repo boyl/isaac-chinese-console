@@ -220,7 +220,9 @@
 
   function runImport(path) {
     if (importBusy) return; importBusy = true; toast("正在从本机 EID 生成离线目录…", "");
-    var fso = new ActiveXObject("Scripting.FileSystemObject"), shell = new ActiveXObject("WScript.Shell"), temp = fso.GetSpecialFolder(2).Path;
+    var host = root.IsaacHost;
+    if (!host || !host.available || !host.fso || !host.shell) { importBusy = false; toast("Windows 脚本宿主桥不可用，无法导入 EID。", "warn"); return; }
+    var fso = host.fso, shell = host.shell, temp = fso.GetSpecialFolder(2).Path;
     var statusPath = fso.BuildPath(temp, "isaac-cn-import-" + new Date().getTime() + ".json");
     function quote(value) { return '"' + String(value).replace(/"/g, '""') + '"'; }
     var command = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ' + quote(appDir() + "\\import-eid-catalog.ps1") + ' -OutputFile ' + quote(root.IsaacState.getCatalogPath()) + ' -StatusFile ' + quote(statusPath) + (path ? ' -EidPath ' + quote(path) : '');
@@ -245,7 +247,9 @@
   function chooseEidFolder() {
     importBusy = false;
     try {
-      var dialog = new ActiveXObject("Shell.Application").BrowseForFolder(0, "选择 External Item Descriptions 根目录", 0, 0);
+      var shellApplication = root.IsaacHost && root.IsaacHost.shellApplication;
+      if (!shellApplication) { toast("系统目录选择器不可用，继续使用 74 项精选。", "warn"); return; }
+      var dialog = shellApplication.BrowseForFolder(0, "选择 External Item Descriptions 根目录", 0, 0);
       if (dialog) runImport(dialog.Self.Path); else toast("未选择 EID 目录，继续使用 74 项精选。", "warn");
     } catch (ignore) { toast("未找到 EID，继续使用 74 项精选。", "warn"); }
   }
@@ -275,7 +279,7 @@
     if (root.IsaacQueue.isBusy()) return;
     root.IsaacQueue.probe(function (running, status) {
       el("statusDot").className = "status-dot" + (running ? " online" : "");
-      el("statusText").innerText = status && status.errorCode === "NO_BRIDGE" ? "脚本组件被系统拦截" : (running ? "游戏运行中" : "未检测到游戏");
+      el("statusText").innerText = status && status.errorCode === "NO_BRIDGE" ? ("脚本桥错误：" + root.IsaacQueue.getBridgeError()) : (running ? "游戏运行中" : "未检测到游戏");
     });
   }
 

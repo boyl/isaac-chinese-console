@@ -3,16 +3,25 @@
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>以撒 · 中文控制台 desktop-v1.4.2</title>
+  <title>以撒 · 中文控制台 desktop-v1.4.3</title>
   <HTA:APPLICATION ID="IsaacConsole" APPLICATIONNAME="Isaac 中文控制台" BORDER="thin" CAPTION="yes" MAXIMIZEBUTTON="yes" MINIMIZEBUTTON="yes" SCROLL="no" SINGLEINSTANCE="yes" WINDOWSTATE="normal" />
   <link rel="stylesheet" type="text/css" href="desktop/app.css" />
   <script type="text/javascript">
+    window.IsaacHost = { available: false, fso: null, shell: null, shellApplication: null, error: "" };
+    try {
+      window.IsaacHost.fso = new ActiveXObject("Scripting.FileSystemObject");
+      window.IsaacHost.shell = new ActiveXObject("WScript.Shell");
+      try { window.IsaacHost.shellApplication = new ActiveXObject("Shell.Application"); } catch (optionalError) {}
+      window.IsaacHost.available = true;
+    } catch (hostError) {
+      window.IsaacHost.error = String(hostError && (hostError.description || hostError.message || hostError.number) || "COM 创建失败");
+    }
     window.onerror = function (message, source, line) {
       var detail = "启动脚本错误：" + message + "\r\n文件：" + source + "\r\n行号：" + line;
       var logPath = "%LOCALAPPDATA%\\IsaacChineseConsole\\startup-error.log";
       try {
-        var fso = new ActiveXObject("Scripting.FileSystemObject");
-        var shell = new ActiveXObject("WScript.Shell");
+        var fso = window.IsaacHost.fso || new ActiveXObject("Scripting.FileSystemObject");
+        var shell = window.IsaacHost.shell || new ActiveXObject("WScript.Shell");
         var folder = shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") + "\\IsaacChineseConsole";
         if (!fso.FolderExists(folder)) fso.CreateFolder(folder);
         logPath = fso.BuildPath(folder, "startup-error.log");
@@ -36,7 +45,7 @@
       <div class="brand">
         <div class="brand-top">BINDING TOOLS</div>
         <div class="brand-title">以撒 · 控制台</div>
-        <div class="brand-sub">desktop-v1.4.2 · 自检启动版</div>
+        <div class="brand-sub">desktop-v1.4.3 · 宿主桥修复版</div>
       </div>
       <div class="nav" id="nav"></div>
       <div class="status-box">

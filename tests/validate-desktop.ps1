@@ -44,6 +44,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Search/catalog tests failed.' }
     & $NodePath (Join-Path $root 'tests\test-app-smoke.js')
     if ($LASTEXITCODE -ne 0) { throw 'App DOM smoke tests failed.' }
+    & $NodePath (Join-Path $root 'tests\test-host-bridge.js')
+    if ($LASTEXITCODE -ne 0) { throw 'HTA host bridge tests failed.' }
     & (Join-Path $root 'tests\test-sender.ps1')
 }
 finally { Pop-Location }

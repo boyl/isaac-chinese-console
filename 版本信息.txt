@@ -1,9 +1,11 @@
-以撒中文控制台 desktop-v1.4.2
+以撒中文控制台 desktop-v1.4.3
 
 产品线：外部 HTA 独立控制台
 运行要求：Windows 10/11、Windows PowerShell 5.1、mshta.exe
 
 本版新增：
+- 修复模块化外部脚本无法直接访问 HTA ActiveXObject、导致界面误报脚本组件被拦截的问题。
+- 由 HTA 内联引导创建统一宿主桥，状态、命令队列和 EID 导入共用同一组 COM 对象。
 - 增加纯英文 START.cmd 与自检 PowerShell 启动器，规避中文 CMD、聊天链接和静默启动失败。
 - 启动成功必须检测到真实可见 HTA 窗口；失败会保留 launcher.log 与 launcher-status.json。
 - 修复 ActiveX/Windows 脚本组件或 LocalAppData 被策略拦截时界面初始化中断的问题。
