@@ -1,6 +1,10 @@
 *.zip
 *.tmp
 *.log
+dist/
+test-artifacts*/
+visual-qa/
+diagnostic-*.png
 批量执行演示.gif
 Thumbs.db
 .DS_Store

@@ -1,167 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>以撒 · 中文控制台 1.3.0</title>
-  <HTA:APPLICATION
-    ID="IsaacConsole"
-    APPLICATIONNAME="Isaac 中文控制台"
-    BORDER="thin"
-    CAPTION="yes"
-    MAXIMIZEBUTTON="yes"
-    MINIMIZEBUTTON="yes"
-    SCROLL="no"
-    SINGLEINSTANCE="yes"
-    WINDOWSTATE="normal"
-  />
-  <style>
-    * { box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-    body {
-      font-family: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
-      color: #f4ead8;
-      background: #120f14;
-      letter-spacing: .1px;
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>以撒 · 中文控制台 desktop-v1.4.3</title>
+  <HTA:APPLICATION ID="IsaacConsole" APPLICATIONNAME="Isaac 中文控制台" BORDER="thin" CAPTION="yes" MAXIMIZEBUTTON="yes" MINIMIZEBUTTON="yes" SCROLL="no" SINGLEINSTANCE="yes" WINDOWSTATE="normal" />
+  <link rel="stylesheet" type="text/css" href="desktop/app.css" />
+  <script type="text/javascript">
+    window.IsaacHost = { available: false, fso: null, shell: null, shellApplication: null, error: "" };
+    try {
+      window.IsaacHost.fso = new ActiveXObject("Scripting.FileSystemObject");
+      window.IsaacHost.shell = new ActiveXObject("WScript.Shell");
+      try { window.IsaacHost.shellApplication = new ActiveXObject("Shell.Application"); } catch (optionalError) {}
+      window.IsaacHost.available = true;
+    } catch (hostError) {
+      window.IsaacHost.error = String(hostError && (hostError.description || hostError.message || hostError.number) || "COM 创建失败");
     }
-    button, input { font-family: inherit; }
-    button { cursor: pointer; }
-    .app { height: 100%; min-width: 900px; display: flex; background: radial-gradient(circle at 78% 5%, #37202c 0, #19141a 36%, #100e12 78%); }
-    .sidebar {
-      width: 232px; min-width: 232px; padding: 22px 14px 16px;
-      background: linear-gradient(180deg, #211820 0%, #151116 100%);
-      border-right: 1px solid #46313a; position: relative;
-    }
-    .brand { padding: 0 10px 22px; border-bottom: 1px solid #3c2b33; }
-    .brand-top { color: #d74b58; font-size: 11px; font-weight: 800; letter-spacing: 3px; }
-    .brand-title { margin-top: 7px; font-size: 23px; font-weight: 900; color: #fff6e8; }
-    .brand-sub { margin-top: 4px; color: #8e7c80; font-size: 11px; }
-    .nav { margin-top: 16px; height: calc(100% - 190px); overflow-y: auto; padding-right: 3px; }
-    .nav::-webkit-scrollbar, .content::-webkit-scrollbar { width: 7px; }
-    .nav::-webkit-scrollbar-thumb, .content::-webkit-scrollbar-thumb { background: #4b3540; border-radius: 8px; }
-    .nav-label { color: #77666c; font-size: 10px; font-weight: 700; letter-spacing: 2px; padding: 7px 11px; }
-    .nav-btn {
-      width: 100%; border: 0; margin: 2px 0; padding: 10px 11px; border-radius: 9px;
-      color: #ae9ca1; background: transparent; text-align: left; font-size: 13px;
-      transition: .16s;
-    }
-    .nav-btn:hover { color: #f5e9dc; background: #2a2027; }
-    .nav-btn.active { color: #fff; background: linear-gradient(90deg, #81333e, #4b2630); box-shadow: inset 3px 0 #ef6976; }
-    .nav-icon { display: inline-block; width: 25px; font-size: 14px; text-align: center; margin-right: 5px; }
-    .nav-count { float: right; margin-top: 1px; color: #8b747a; font-size: 10px; }
-    .status-box { position: absolute; left: 14px; right: 14px; bottom: 15px; padding: 11px 12px; border: 1px solid #3e3036; border-radius: 10px; background: #1b161b; }
-    .status-line { font-size: 11px; color: #b8a6aa; }
-    .status-dot { width: 8px; height: 8px; display: inline-block; margin-right: 7px; border-radius: 50%; background: #a44; box-shadow: 0 0 8px #a44; }
-    .status-dot.online { background: #5cc48b; box-shadow: 0 0 8px #5cc48b; }
-    .status-tip { margin-top: 5px; color: #6f6266; font-size: 9px; }
-    .main { flex: 1; height: 100%; min-width: 0; display: flex; flex-direction: column; }
-    .topbar { height: 78px; min-height: 78px; display: flex; align-items: center; padding: 0 28px; border-bottom: 1px solid #3b2932; background: rgba(19,15,19,.78); }
-    .search-wrap { position: relative; width: 430px; }
-    .search-icon { position: absolute; left: 15px; top: 11px; color: #7f6f73; font-size: 15px; }
-    .search {
-      width: 100%; height: 40px; border: 1px solid #43313a; border-radius: 10px; outline: 0;
-      color: #f4e9db; background: #211920; padding: 0 42px; font-size: 12px;
-    }
-    .search:focus { border-color: #a54855; box-shadow: 0 0 0 3px rgba(165,72,85,.12); }
-    .kbd { position: absolute; right: 10px; top: 10px; color: #71646a; font-size: 9px; border: 1px solid #493942; padding: 3px 6px; border-radius: 5px; }
-    .top-actions { margin-left: auto; display: flex; align-items: center; }
-    .ghost-btn, .danger-btn { border: 1px solid #4a363f; border-radius: 9px; color: #bcaeb0; background: #211920; padding: 9px 13px; margin-left: 8px; font-size: 11px; }
-    .ghost-btn:hover { color: #fff; border-color: #74515d; }
-    .danger-btn { color: #e58d95; }
-    .danger-btn:hover { color: #fff; border-color: #a94954; background: #3d2028; }
-    .content { flex: 1; min-height: 0; overflow-y: auto; padding: 25px 28px; }
-    .hero { display: flex; align-items: flex-end; margin-bottom: 20px; }
-    .hero-copy { flex: 1; }
-    .eyebrow { font-size: 10px; color: #d65c68; letter-spacing: 2.5px; font-weight: 800; }
-    .page-title { margin: 6px 0 5px; font-size: 27px; color: #fff6e9; line-height: 1.2; }
-    .page-desc { color: #8f7f84; font-size: 11px; }
-    .legend { color: #79696e; font-size: 10px; white-space: nowrap; padding-bottom: 3px; }
-    .section-title { font-size: 11px; letter-spacing: 1.5px; color: #a08d92; margin: 22px 0 10px; }
-    .section-title strong { color: #efe0d2; font-size: 13px; margin-right: 9px; }
-    .grid { display: flex; flex-wrap: wrap; margin: 0 -6px; }
-    .card-wrap { width: 33.333%; padding: 6px; }
-    .card {
-      height: 164px; position: relative; overflow: hidden; padding: 16px; border-radius: 13px;
-      background: linear-gradient(145deg, #261d23, #1c171c); border: 1px solid #423039;
-      box-shadow: 0 8px 25px rgba(0,0,0,.12); transition: .16s;
-    }
-    .card:hover { border-color: #74515c; transform: translateY(-2px); box-shadow: 0 11px 28px rgba(0,0,0,.24); }
-    .card.hot { border-color: #67404a; background: linear-gradient(145deg, #312027, #1e171c); }
-    .card-glow { position: absolute; width: 110px; height: 110px; right: -40px; top: -50px; border-radius: 50%; opacity: .13; background: #ed6674; filter: blur(6px); }
-    .card-head { display: flex; align-items: center; position: relative; z-index: 1; }
-    .sigil {
-      width: 37px; height: 37px; min-width: 37px; line-height: 37px; border-radius: 10px; margin-right: 10px;
-      text-align: center; color: #fff6ea; font-size: 16px; font-weight: 900; background: linear-gradient(145deg, #9e3f4c, #5d2933);
-      box-shadow: inset 0 1px rgba(255,255,255,.14), 0 5px 12px rgba(0,0,0,.24);
-    }
-    .sigil.gold { background: linear-gradient(145deg, #b88442, #674a28); }
-    .sigil.blue { background: linear-gradient(145deg, #507798, #314658); }
-    .sigil.green { background: linear-gradient(145deg, #4d866c, #2b4f40); }
-    .item-main { min-width: 0; flex: 1; }
-    .item-name { color: #fff5e8; font-size: 14px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .item-en { color: #75666b; font-size: 9px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .tier { margin-left: 6px; border: 1px solid #6a3f48; border-radius: 6px; padding: 3px 6px; color: #ed8c95; font-size: 9px; font-weight: 800; }
-    .tier.a { color: #e8bd74; border-color: #6c5532; }
-    .fav { border: 0; background: transparent; color: #66565b; font-size: 18px; padding: 0 0 0 7px; line-height: 1; }
-    .fav.on { color: #f0b653; text-shadow: 0 0 8px rgba(240,182,83,.45); }
-    .item-desc { height: 31px; margin-top: 11px; color: #a8979b; font-size: 10px; line-height: 1.5; overflow: hidden; }
-    .card-foot { position: absolute; left: 16px; right: 16px; bottom: 13px; display: flex; align-items: center; }
-    .code { color: #6e6266; font-family: Consolas, monospace; font-size: 9px; flex: 1; }
-    .remove-btn { border: 0; color: #786b6e; background: transparent; font-size: 10px; padding: 7px 8px; }
-    .remove-btn:hover { color: #e1999f; }
-    .give-btn { border: 0; border-radius: 7px; color: #fff; background: #8d3945; padding: 7px 11px; font-size: 10px; font-weight: 700; }
-    .give-btn:hover { background: #b34c59; }
-    .command-card { height: 132px; }
-    .command-card .item-desc { height: 30px; }
-    .command-card .give-btn { padding-left: 16px; padding-right: 16px; }
-    .empty { width: 100%; text-align: center; padding: 60px 20px; color: #74656a; }
-    .empty-big { font-size: 30px; margin-bottom: 10px; color: #4e3c43; }
-    .dock {
-      position: relative; z-index: 20; flex: 0 0 94px; height: 94px; margin: 0 22px 18px;
-      border: 1px solid #513943; border-radius: 14px; background: rgba(30,23,29,.97);
-      box-shadow: 0 15px 40px rgba(0,0,0,.45); padding: 13px 15px;
-    }
-    .dock-head { display: flex; align-items: center; margin-bottom: 8px; }
-    .dock-title { font-size: 10px; font-weight: 800; letter-spacing: 1.2px; color: #c5b3b7; }
-    .dock-hint { margin-left: 9px; color: #6f6267; font-size: 9px; }
-    .mode-label { margin-left: auto; color: #796b70; font-size: 9px; }
-    .send-mode { height: 24px; margin-left: 7px; border: 1px solid #49343e; border-radius: 6px; outline: 0; color: #cbbbc0; background: #171217; padding: 0 7px; font-size: 9px; }
-    .repeat-label { margin-left: 13px; color: #796b70; font-size: 9px; }
-    .repeat-control { display: flex; height: 24px; margin-left: 7px; border: 1px solid #49343e; border-radius: 6px; overflow: hidden; background: #171217; }
-    .repeat-btn { width: 24px; border: 0; color: #cbbbc0; background: #241a20; font-size: 14px; line-height: 22px; }
-    .repeat-btn:hover { color: #fff; background: #493039; }
-    .repeat-input { width: 34px; height: 22px; border: 0; border-left: 1px solid #49343e; border-right: 1px solid #49343e; outline: 0; color: #f3d9c2; background: #171217; text-align: center; font: 10px Consolas,monospace; }
-    .repeat-warning { display: none; margin-left: 7px; color: #e2ac64; font-size: 9px; white-space: nowrap; }
-    .recent { margin-left: auto; color: #796c70; font-size: 9px; max-width: 42%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-    .command-row { display: flex; }
-    .command-input { flex: 1; height: 37px; border: 1px solid #49343e; border-radius: 8px 0 0 8px; outline: none; color: #f2e7d8; background: #151116; padding: 0 13px; font: 12px Consolas, monospace; }
-    .command-input:focus { border-color: #a64855; }
-    .copy-btn { width: 66px; border: 1px solid #49343e; border-left: 0; color: #ad9da1; background: #21191f; font-size: 10px; }
-    .send-btn { width: 104px; border: 0; border-radius: 0 8px 8px 0; color: #fff; background: linear-gradient(135deg, #a54350, #7a303b); font-size: 11px; font-weight: 800; }
-    .send-btn:hover { background: linear-gradient(135deg, #c45260, #923945); }
-    .send-btn.disabled { cursor: wait; color: #9f8f92; background: #49363d; }
-    .toast { position: fixed; right: 25px; top: 91px; z-index: 99; min-width: 230px; max-width: 390px; padding: 13px 15px; border-radius: 10px; color: #eee3d5; background: #34252d; border: 1px solid #66454f; box-shadow: 0 12px 30px rgba(0,0,0,.34); font-size: 11px; display: none; }
-    .toast.ok { border-color: #3f745b; background: #203a30; }
-    .toast.warn { border-color: #8a6739; background: #44331f; }
-    .mini-note { display: inline-block; margin-left: 8px; color: #e2ac64; font-size: 9px; }
-    .modal-backdrop { position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; display: none; align-items: center; justify-content: center; background: rgba(10,8,11,.82); }
-    .modal { width: 760px; max-height: 84%; overflow-y: auto; border: 1px solid #68454f; border-radius: 16px; padding: 25px 27px; color: #d8c9bd; background: linear-gradient(145deg,#2b2026,#181419); box-shadow: 0 25px 70px rgba(0,0,0,.65); }
-    .modal-head { display: flex; align-items: flex-start; border-bottom: 1px solid #48343d; padding-bottom: 17px; }
-    .modal-title { margin: 4px 0 5px; color: #fff5e8; font-size: 22px; }
-    .modal-sub { color: #8e7d82; font-size: 11px; }
-    .modal-close { margin-left: auto; border: 1px solid #533c44; border-radius: 8px; color: #b7a6aa; background: #20191e; padding: 7px 11px; }
-    .tutorial-grid { display: flex; margin: 17px -7px 0; }
-    .tutorial-col { width: 50%; padding: 0 7px; }
-    .tutorial-box { min-height: 128px; margin-bottom: 12px; padding: 14px 15px; border: 1px solid #44323a; border-radius: 11px; background: #1c171b; }
-    .tutorial-box h3 { margin: 0 0 9px; color: #f0e1d3; font-size: 12px; }
-    .tutorial-box p, .tutorial-box li { color: #9f8e93; font-size: 10px; line-height: 1.7; }
-    .tutorial-box ol, .tutorial-box ul { margin: 0; padding-left: 19px; }
-    .path-code { display: block; margin-top: 7px; padding: 8px 9px; border-radius: 6px; color: #d6a972; background: #120f12; font: 9px Consolas,monospace; word-break: break-all; }
-    .modal-foot { display: flex; align-items: center; margin-top: 8px; }
-    .modal-note { flex: 1; color: #796a6f; font-size: 9px; }
-    .primary-modal { border: 0; border-radius: 8px; color: #fff; background: #963c49; padding: 9px 17px; font-weight: 700; }
-    @media (max-width: 1080px) { .card-wrap { width: 50%; } .search-wrap { width: 340px; } .dock-hint, .recent, .repeat-warning { display: none; } }
-  </style>
+    window.onerror = function (message, source, line) {
+      var detail = "启动脚本错误：" + message + "\r\n文件：" + source + "\r\n行号：" + line;
+      var logPath = "%LOCALAPPDATA%\\IsaacChineseConsole\\startup-error.log";
+      try {
+        var fso = window.IsaacHost.fso || new ActiveXObject("Scripting.FileSystemObject");
+        var shell = window.IsaacHost.shell || new ActiveXObject("WScript.Shell");
+        var folder = shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") + "\\IsaacChineseConsole";
+        if (!fso.FolderExists(folder)) fso.CreateFolder(folder);
+        logPath = fso.BuildPath(folder, "startup-error.log");
+        var file = fso.CreateTextFile(logPath, true, true);
+        file.WriteLine(new Date().toLocaleString());
+        file.Write(detail);
+        file.Close();
+      } catch (ignore) {}
+      try {
+        document.body.innerHTML = '<div style="font-family:Segoe UI,Microsoft YaHei,sans-serif;padding:32px;background:#17131f;color:#f2e9dc;min-height:100%">' +
+          '<h2 style="color:#e39b6d">控制台界面初始化失败</h2><p>请把下面的信息发回来：</p><pre style="white-space:pre-wrap;background:#251e30;padding:16px;border:1px solid #59476d">' +
+          String(detail).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + '</pre><p>诊断日志：' + logPath + '</p></div>';
+      } catch (ignore2) {}
+      return true;
+    };
+  </script>
 </head>
 <body>
   <div class="app">
@@ -169,12 +45,12 @@
       <div class="brand">
         <div class="brand-top">BINDING TOOLS</div>
         <div class="brand-title">以撒 · 控制台</div>
-        <div class="brand-sub">Repentance 中文辅助面板</div>
+        <div class="brand-sub">desktop-v1.4.3 · 宿主桥修复版</div>
       </div>
       <div class="nav" id="nav"></div>
       <div class="status-box">
         <div class="status-line"><span class="status-dot" id="statusDot"></span><span id="statusText">正在检测游戏…</span></div>
-        <div class="status-tip">发送前请先进入一局游戏</div>
+        <div class="status-tip" id="catalogStatus">精选目录 74 项 · EID 尚未导入</div>
       </div>
     </aside>
 
@@ -182,13 +58,14 @@
       <header class="topbar">
         <div class="search-wrap">
           <span class="search-icon">⌕</span>
-          <input id="search" class="search" type="text" placeholder="搜索中文名、英文名、效果或 ID…" />
+          <input id="search" class="search" type="text" placeholder="搜索中文、英文、拼音、命令或 ID…" />
           <span class="kbd">Ctrl + K</span>
         </div>
         <div class="top-actions">
-          <button class="ghost-btn" onclick="showTutorial()">使用教程</button>
-          <button class="ghost-btn" onclick="showHistory()">最近命令</button>
-          <button class="danger-btn" onclick="confirmClearItems()">清空道具</button>
+          <button class="ghost-btn optional" onclick="IsaacApp.importCatalog()">导入 EID</button>
+          <button class="ghost-btn" onclick="IsaacApp.showHistory()">历史</button>
+          <button class="ghost-btn" onclick="IsaacApp.showSavedQueues()">方案</button>
+          <button class="ghost-btn" onclick="IsaacApp.openQueue()">队列 <span id="queueCount">0</span></button>
         </div>
       </header>
 
@@ -197,441 +74,67 @@
           <div class="hero-copy">
             <div class="eyebrow" id="eyebrow">CURATED LOADOUT</div>
             <h1 class="page-title" id="pageTitle">常用精选</h1>
-            <div class="page-desc" id="pageDesc">高强度与高频道具已按优先级排在最前。</div>
+            <div class="page-desc" id="pageDesc">高强度与常用道具按原分类保留。</div>
           </div>
-          <div class="legend"><span style="color:#ed8c95">S</span> 顶级强度　<span style="color:#e8bd74">A</span> 常用推荐</div>
+          <div class="hero-tools">
+            <div class="stage-mode" id="stageMode">
+              <button id="stageNormal" onclick="IsaacApp.setStageMode('normal')">普通</button><button id="stageGreed" onclick="IsaacApp.setStageMode('greed')">贪婪</button>
+            </div>
+            <div class="pager"><button onclick="IsaacApp.changePage(-1)">←</button><span id="pageIndicator">1 / 1</span><button onclick="IsaacApp.changePage(1)">→</button></div>
+          </div>
         </div>
+        <div class="section-title"><strong id="sectionLabel">优先推荐</strong><span id="resultCount">0 项</span><span class="catalog-badge" id="resultSource"></span></div>
         <div id="cards"></div>
       </section>
+
       <div class="dock">
         <div class="dock-head">
-          <span class="dock-title">手动命令</span><span class="dock-hint">执行后使用 Esc 自动关闭控制台</span>
-          <span class="mode-label">发送模式</span><select class="send-mode" id="sendMode"><option value="auto">自动打开并关闭</option><option value="open">控制台已打开（执行后关闭）</option></select>
-          <span class="repeat-label">执行次数</span><span class="repeat-control"><button class="repeat-btn" onclick="adjustRepeat(-1)" title="减少一次">−</button><input class="repeat-input" id="repeatCount" type="text" value="1" maxlength="2" onkeyup="normalizeRepeat(false)" onblur="normalizeRepeat(true)" /><button class="repeat-btn" onclick="adjustRepeat(1)" title="增加一次">+</button></span>
-          <span class="repeat-warning" id="repeatWarning">超过 20 次可能卡顿</span>
-          <span class="recent" id="recent">当前：giveitem c182</span>
+          <span class="dock-title">手动命令</span><span id="manualRisk">任意单行命令均可入队</span>
+          <span class="mode-label">发送模式</span>
+          <select class="send-mode" id="sendMode"><option value="auto">自动打开并关闭</option><option value="open">控制台已打开</option></select>
+          <span class="repeat-control"><button onclick="IsaacApp.adjustManualRepeat(-1)">−</button><input id="repeatCount" type="text" value="1" maxlength="2" /><button onclick="IsaacApp.adjustManualRepeat(1)">+</button></span>
         </div>
         <div class="command-row">
           <input class="command-input" id="manualCommand" type="text" value="giveitem c182" />
-          <button class="copy-btn" onclick="copyManual()">复制</button>
-          <button class="send-btn" id="sendBtn" onclick="sendManual()">发送到游戏</button>
+          <button class="command-btn" onclick="IsaacApp.copyManual()">复制</button>
+          <button class="command-btn" onclick="IsaacApp.addManualToQueue()">加入队列</button>
+          <button class="command-btn primary" id="sendBtn" onclick="IsaacApp.sendManual()">立即执行</button>
         </div>
       </div>
     </main>
   </div>
-  <div class="toast" id="toast"></div>
 
-  <div class="modal-backdrop" id="tutorialModal">
+  <aside class="drawer" id="detailDrawer">
+    <div class="drawer-head"><div class="drawer-title">道具详情</div><button class="drawer-close" onclick="IsaacApp.closeDrawers()">×</button></div>
+    <div id="detailBody"></div>
+  </aside>
+
+  <aside class="drawer" id="queueDrawer">
+    <div class="drawer-head"><div class="drawer-title">命令队列</div><button class="drawer-close" onclick="IsaacApp.closeDrawers()">×</button></div>
+    <div class="queue-summary" id="queueSummary">队列为空</div>
+    <div class="progress" id="queueProgress"></div>
+    <div class="queue-list" id="queueList"></div>
+    <div class="detail-actions">
+      <button class="small-btn" onclick="IsaacApp.saveCurrentQueue()">保存方案</button>
+      <button class="small-btn" onclick="IsaacApp.clearQueue()">清空</button>
+      <button class="small-btn" id="cancelQueueBtn" onclick="IsaacApp.cancelQueue()">取消执行</button>
+      <button class="danger-btn" id="executeQueueBtn" onclick="IsaacApp.executeQueue()">执行队列</button>
+    </div>
+  </aside>
+
+  <div class="modal-backdrop" id="modalBackdrop">
     <div class="modal">
-      <div class="modal-head">
-        <div><div class="eyebrow">QUICK START</div><h2 class="modal-title">第一次使用：三分钟上手</h2><div class="modal-sub">本工具不修改游戏文件、不安装 Mod，只替你操作游戏内置控制台。</div></div>
-        <button class="modal-close" onclick="hideTutorial()">关闭</button>
-      </div>
-      <div class="tutorial-grid">
-        <div class="tutorial-col">
-          <div class="tutorial-box"><h3>① 前置要求</h3><ul><li>Windows 10 / 11 与 Steam 版 Isaac</li><li>推荐 Repentance；道具库按该版本整理</li><li>PowerShell 5.1 和 mshta（Windows 自带）</li><li>游戏内置调试控制台必须已开启</li></ul></div>
-          <div class="tutorial-box"><h3>② 开启内置控制台</h3><p>关闭游戏，找到对应版本的 options.ini，把 EnableDebugConsole 改成 1 后保存。</p><span class="path-code">文档\My Games\Binding of Isaac Repentance\options.ini</span><p>若使用 Repentance+，目录名通常是 Binding of Isaac Repentance+。</p></div>
-        </div>
-        <div class="tutorial-col">
-          <div class="tutorial-box"><h3>③ 正确发送与批量执行</h3><ol><li>启动游戏并进入一局，保持原生控制台关闭</li><li>在底部用 − / + 或输入框设置 1–99 次</li><li>点击操作；giveitem、spawn 会在同一控制台会话中连续执行</li><li>全部完成后工具只按一次 Esc 关闭控制台</li></ol></div>
-          <div class="tutorial-box"><h3>④ 安全规则与失败处理</h3><ul><li>debug、stage、kill、remove 等始终只执行 1 次</li><li>超过 20 次会提醒卡顿风险，但不会阻止</li><li>部分完成会显示实际进度，请勿直接整批重试</li><li>完全失败时保留次数并复制命令，便于排查后重试</li></ul></div>
-        </div>
-      </div>
-      <div class="modal-foot"><div class="modal-note">提示：使用控制台可能影响成就或解锁条件，建议用于娱乐/测试存档。</div><button class="primary-modal" onclick="hideTutorial()">我知道了，开始使用</button></div>
+      <div class="drawer-head"><div class="drawer-title" id="modalTitle">记录</div><button class="drawer-close" onclick="IsaacApp.closeModal()">×</button></div>
+      <div id="modalBody"></div>
     </div>
   </div>
+  <div class="toast" id="toast"></div>
 
-  <script language="javascript">
-    var categories = [
-      { id:"featured", group:"精选", icon:"✦", name:"常用精选", desc:"你收藏的道具，以及每类最常用的高强度选择。", eyebrow:"CURATED LOADOUT" },
-      { id:"damage", group:"道具", icon:"刃", name:"输出核心", desc:"伤害、射击方式与高强度叠加核心。", eyebrow:"DAMAGE & TEARS" },
-      { id:"defense", group:"道具", icon:"盾", name:"生存防御", desc:"护盾、减伤、免疫与容错道具。", eyebrow:"SURVIVAL" },
-      { id:"economy", group:"道具", icon:"$", name:"资源经济", desc:"商店、掉落与资源成长道具。", eyebrow:"ECONOMY" },
-      { id:"explore", group:"道具", icon:"图", name:"地图探索", desc:"地图显示、隐藏房与房间移动工具。", eyebrow:"NAVIGATION" },
-      { id:"active", group:"道具", icon:"骰", name:"主动神器", desc:"重随、回溯、重开与改变流程的强力主动道具。", eyebrow:"ACTIVE ITEMS" },
-      { id:"familiar", group:"道具", icon:"伴", name:"跟班军团", desc:"输出、格挡与续航型跟班。", eyebrow:"FAMILIARS" },
-      { id:"fun", group:"道具", icon:"乱", name:"趣味组合", desc:"适合测试构筑与制造夸张联动。", eyebrow:"CHAOS LAB" },
-      { id:"debug", group:"控制台", icon:"⚙", name:"调试能力", desc:"无敌、高伤、无限充能与信息显示开关。再次点击同一 debug 命令可关闭。", eyebrow:"DEBUG FLAGS" },
-      { id:"supply", group:"控制台", icon:"+", name:"即时补给", desc:"生成资源、回复与当前房间辅助。", eyebrow:"SUPPLY DROP" },
-      { id:"stage", group:"控制台", icon:"门", name:"楼层跳转", desc:"直接进入指定主线楼层；会改变当前流程，请谨慎使用。", eyebrow:"STAGE WARP" }
-    ];
-
-    var items = [
-      {id:182,cat:"damage",name:"圣心",en:"Sacred Heart",tier:"S",icon:"心",desc:"高额伤害倍率、自追踪与生命上限，最稳定的顶级输出核心。",hot:1},
-      {id:331,cat:"damage",name:"神性",en:"Godhead",tier:"S",icon:"神",desc:"追踪泪弹附带持续伤害光环，清图与对 Boss 都很强。",hot:1},
-      {id:118,cat:"damage",name:"硫磺火",en:"Brimstone",tier:"S",icon:"硫",desc:"蓄力发射贯穿房间的血激光，经典强力射击方式。",hot:1},
-      {id:114,cat:"damage",name:"妈妈的刀",en:"Mom's Knife",tier:"S",icon:"刀",desc:"将泪弹替换为蓄力飞刀，近远距离都拥有极高伤害。",hot:1},
-      {id:678,cat:"damage",name:"剖腹产",en:"C Section",tier:"S",icon:"胎",desc:"发射可追踪的胎儿弹体，联动丰富且基础强度极高。",hot:1},
-      {id:395,cat:"damage",name:"科技 X",en:"Tech X",tier:"S",icon:"X",desc:"蓄力发射激光圆环，贯穿、范围大并能穿透障碍。",hot:1},
-      {id:531,cat:"damage",name:"血泪症",en:"Haemolacria",tier:"S",icon:"血",desc:"泪弹落地后分裂爆开，极大提高爆发与覆盖范围。",hot:1},
-      {id:169,cat:"damage",name:"独眼巨人",en:"Polyphemus",tier:"S",icon:"眼",desc:"巨额伤害倍率，射速下降但单发伤害非常夸张。",hot:1},
-      {id:562,cat:"damage",name:"谷底石",en:"Rock Bottom",tier:"S",icon:"石",desc:"锁定已获得的最高属性数值，构筑上限极高。",hot:1},
-      {id:691,cat:"damage",name:"神圣宝珠",en:"Sacred Orb",tier:"S",icon:"珠",desc:"改善后续道具质量，降低低质量道具出现概率。",hot:1},
-      {id:689,cat:"damage",name:"故障王冠",en:"Glitched Crown",tier:"S",icon:"冠",desc:"道具在多个选项间快速切换，可大幅提高获取顶级道具的机会。",hot:1},
-      {id:12,cat:"damage",name:"魔法蘑菇",en:"Magic Mushroom",tier:"A",icon:"菇",desc:"全属性提升并提供伤害倍率，是泛用性极好的强化。"},
-      {id:4,cat:"damage",name:"蟋蟀的头",en:"Cricket's Head",tier:"A",icon:"猫",desc:"提高伤害并提供强力伤害倍率，简单直接。"},
-      {id:415,cat:"damage",name:"圣光之冠",en:"Crown of Light",tier:"A",icon:"冠",desc:"满红心时大幅提高伤害与射程。"},
-      {id:245,cat:"damage",name:"20/20",en:"20/20",tier:"A",icon:"双",desc:"一次发射两颗泪弹，是可靠的多发输出道具。"},
-
-      {id:313,cat:"defense",name:"神圣斗篷",en:"Holy Mantle",tier:"S",icon:"衣",desc:"每个房间抵挡一次伤害，提供顶级稳定容错。",hot:1},
-      {id:108,cat:"defense",name:"圣饼",en:"The Wafer",tier:"S",icon:"饼",desc:"将大部分伤害降低为半颗心，后期生存能力极强。",hot:1},
-      {id:581,cat:"defense",name:"灵魂苍蝇",en:"Psy Fly",tier:"S",icon:"蝇",desc:"自动追踪并格挡敌方弹幕，对弹幕 Boss 尤其强。",hot:1},
-      {id:223,cat:"defense",name:"纵火狂",en:"Pyromaniac",tier:"S",icon:"火",desc:"免疫爆炸，并可通过爆炸回复红心。",hot:1},
-      {id:375,cat:"defense",name:"寄居骷髅帽",en:"Host Hat",tier:"A",icon:"帽",desc:"免疫爆炸并有概率格挡敌方弹幕。"},
-      {id:210,cat:"defense",name:"啃过的叶子",en:"Gnawed Leaf",tier:"A",icon:"叶",desc:"静止一段时间后进入无敌，适合与自动攻击跟班配合。"},
-      {id:81,cat:"defense",name:"嗝屁猫",en:"Dead Cat",tier:"A",icon:"猫",desc:"获得九条命；会把红心上限调整为一颗。"},
-      {id:232,cat:"defense",name:"秒表",en:"Stop Watch",tier:"A",icon:"表",desc:"永久减缓大多数敌人和敌方弹幕。"},
-      {id:242,cat:"defense",name:"耻辱面具",en:"Infamy",tier:"A",icon:"面",desc:"有概率从角色面朝方向格挡伤害。"},
-
-      {id:64,cat:"economy",name:"Steam 大促",en:"Steam Sale",tier:"S",icon:"折",desc:"商店价格减半，越早拿到收益越高。",hot:1},
-      {id:203,cat:"economy",name:"乞丐的包袱",en:"Humbling Bundle",tier:"S",icon:"双",desc:"多数基础掉落会成对出现，显著提高资源量。",hot:1},
-      {id:241,cat:"economy",name:"地狱契约",en:"Contract From Below",tier:"S",icon:"契",desc:"大幅提高房间清理后的掉落数量。",hot:1},
-      {id:716,cat:"economy",name:"店主的袋子",en:"Keeper's Sack",tier:"S",icon:"袋",desc:"在商店花钱会持续提高属性，成长性很强。",hot:1},
-      {id:416,cat:"economy",name:"深口袋",en:"Deep Pockets",tier:"A",icon:"袋",desc:"硬币上限提高到 999，并改善空房掉落。"},
-      {id:424,cat:"economy",name:"袋中袋",en:"Sack Head",tier:"A",icon:"袋",desc:"掉落有机会替换为装有多种资源的袋子。"},
-      {id:429,cat:"economy",name:"店主的头",en:"Head of the Keeper",tier:"A",icon:"金",desc:"泪弹击中敌人时有概率掉落硬币。"},
-      {id:109,cat:"economy",name:"钱就是力量",en:"Money = Power",tier:"A",icon:"$",desc:"持有的硬币越多，伤害越高。"},
-      {id:249,cat:"economy",name:"选择？",en:"There's Options",tier:"A",icon:"?",desc:"Boss 房奖励出现两个选择。"},
-      {id:414,cat:"economy",name:"更多选择",en:"More Options",tier:"A",icon:"+",desc:"宝箱房道具出现两个选择。"},
-
-      {id:21,cat:"explore",name:"指南针",en:"The Compass",tier:"A",icon:"针",desc:"在地图上显示特殊房间图标。",hot:1},
-      {id:54,cat:"explore",name:"藏宝图",en:"Treasure Map",tier:"A",icon:"图",desc:"显示当前楼层的房间布局。",hot:1},
-      {id:246,cat:"explore",name:"蓝地图",en:"Blue Map",tier:"A",icon:"蓝",desc:"在地图上显示隐藏房与超级隐藏房。",hot:1},
-      {id:76,cat:"explore",name:"X 光透视",en:"X-Ray Vision",tier:"A",icon:"X",desc:"自动打开大多数隐藏房入口。",hot:1},
-      {id:580,cat:"explore",name:"红钥匙",en:"Red Key",tier:"S",icon:"钥",desc:"在合适墙面开启红房间，探索隐藏版图。",hot:1},
-      {id:419,cat:"explore",name:"传送 2.0",en:"Teleport 2.0",tier:"A",icon:"传",desc:"按探索顺序传送到未进入的房间，并可抵达特殊房。"},
-      {id:91,cat:"explore",name:"探险帽",en:"Spelunker Hat",tier:"A",icon:"帽",desc:"显示相邻房间类型，并帮助发现隐藏房。"},
-      {id:175,cat:"explore",name:"爸爸的钥匙",en:"Dad's Key",tier:"A",icon:"钥",desc:"打开当前房间的门，也能处理部分特殊门。"},
-      {id:84,cat:"explore",name:"我们需要深入挖掘",en:"We Need to Go Deeper!",tier:"A",icon:"铲",desc:"生成通往下一层的活板门。"},
-
-      {id:105,cat:"active",name:"D6",en:"The D6",tier:"S",icon:"6",desc:"重置房间内的道具，是最泛用的主动道具之一。",hot:1},
-      {id:489,cat:"active",name:"无限面骰",en:"D Infinity",tier:"S",icon:"∞",desc:"可切换多种骰子效果，功能极其全面。",hot:1},
-      {id:723,cat:"active",name:"倒转骰子",en:"Spindown Dice",tier:"S",icon:"↘",desc:"把道具 ID 向下重置，可稳定获取特定强力道具。",hot:1},
-      {id:636,cat:"active",name:"R 键",en:"R Key",tier:"S",icon:"R",desc:"保留当前构筑重新开始一局，适合延长路线。",hot:1},
-      {id:628,cat:"active",name:"死亡证明",en:"Death Certificate",tier:"S",icon:"证",desc:"进入包含全部道具的区域，可任选一件。",hot:1},
-      {id:622,cat:"active",name:"创世记",en:"Genesis",tier:"S",icon:"创",desc:"重构身上道具，并在特殊区域重新选择构筑。",hot:1},
-      {id:477,cat:"active",name:"虚空",en:"Void",tier:"A",icon:"空",desc:"吞噬道具：主动效果合并，被动道具转化为属性。"},
-      {id:476,cat:"active",name:"D1",en:"The D1",tier:"A",icon:"1",desc:"复制房间中的随机掉落物。"},
-      {id:422,cat:"active",name:"发光沙漏",en:"Glowing Hour Glass",tier:"A",icon:"沙",desc:"回到上一个房间并恢复此前状态。"},
-      {id:58,cat:"active",name:"影之书",en:"Book of Shadows",tier:"A",icon:"书",desc:"短时间无敌，适合 Boss 与献祭场景。"},
-      {id:292,cat:"active",name:"撒旦圣经",en:"Satanic Bible",tier:"A",icon:"书",desc:"提供黑心，并改变 Boss 房奖励机制。"},
-      {id:347,cat:"active",name:"二倍视野",en:"Diplopia",tier:"A",icon:"×2",desc:"复制当前房间内的道具与掉落物。"},
-
-      {id:360,cat:"familiar",name:"梦魇宝宝",en:"Incubus",tier:"S",icon:"魔",desc:"复制角色的泪弹攻击，是高强度输出跟班。",hot:1},
-      {id:698,cat:"familiar",name:"扭曲的双子",en:"Twisted Pair",tier:"S",icon:"双",desc:"两个恶魔跟班同时复制射击，提供可观伤害。",hot:1},
-      {id:417,cat:"familiar",name:"魅魔",en:"Succubus",tier:"S",icon:"魅",desc:"伤害光环会攻击敌人并增强范围内的角色伤害。",hot:1},
-      {id:387,cat:"familiar",name:"撒拉弗",en:"Seraphim",tier:"A",icon:"天",desc:"发射高伤害圣心泪弹。"},
-      {id:268,cat:"familiar",name:"腐烂宝宝",en:"Rotten Baby",tier:"A",icon:"腐",desc:"发射攻击苍蝇，输出稳定。"},
-      {id:275,cat:"familiar",name:"小硫磺火",en:"Lil Brimstone",tier:"A",icon:"硫",desc:"蓄力发射短程硫磺火激光。"},
-      {id:265,cat:"familiar",name:"干瘪宝宝",en:"Dry Baby",tier:"A",icon:"干",desc:"格挡弹幕，并有概率触发全房伤害。"},
-      {id:270,cat:"familiar",name:"水蛭",en:"Leech",tier:"A",icon:"蛭",desc:"主动追咬敌人，击杀时可回复红心。"},
-      {id:247,cat:"familiar",name:"好朋友一辈子！",en:"BFFS!",tier:"A",icon:"友",desc:"强化大多数跟班的体积与伤害。"},
-
-      {id:721,cat:"fun",name:"TMTRAINER",en:"TMTRAINER",tier:"S",icon:"错",desc:"后续道具变成随机故障效果，极度混沌。",hot:1},
-      {id:700,cat:"fun",name:"回声室",en:"Echo Chamber",tier:"S",icon:"回",desc:"使用消耗品时重复此前效果，容易形成夸张连锁。",hot:1},
-      {id:625,cat:"fun",name:"超级蘑菇",en:"Mega Mush",tier:"S",icon:"巨",desc:"短时间变成巨人，碾压敌人与障碍。",hot:1},
-      {id:330,cat:"fun",name:"豆浆",en:"Soy Milk",tier:"A",icon:"奶",desc:"伤害大幅下降但射速暴涨，联动潜力很高。"},
-      {id:561,cat:"fun",name:"杏仁奶",en:"Almond Milk",tier:"A",icon:"杏",desc:"超高射速并让泪弹获得随机弹道。"},
-      {id:494,cat:"fun",name:"雅各布天梯",en:"Jacob's Ladder",tier:"A",icon:"电",desc:"泪弹命中后释放连锁电击。"},
-      {id:418,cat:"fun",name:"水果蛋糕",en:"Fruit Cake",tier:"A",icon:"糕",desc:"每颗泪弹获得随机特殊效果。"},
-      {id:529,cat:"fun",name:"噗！",en:"Pop!",tier:"A",icon:"泡",desc:"泪弹彼此碰撞并持续存在，形成弹幕。"},
-      {id:570,cat:"fun",name:"橡皮泥饼干",en:"Playdough Cookie",tier:"A",icon:"彩",desc:"泪弹随机获得不同元素效果。"},
-      {id:233,cat:"fun",name:"小小星球",en:"Tiny Planet",tier:"A",icon:"星",desc:"泪弹围绕角色旋转，改变射击逻辑。"}
-    ];
-
-    var commands = [
-      {cat:"debug",name:"无敌模式",en:"Debug Flag 3",tier:"S",icon:"∞",desc:"角色不再受到伤害；再次执行可关闭。",cmd:"debug 3"},
-      {cat:"debug",name:"超高伤害",en:"Debug Flag 4",tier:"S",icon:"爆",desc:"赋予极高伤害，快速测试房间与 Boss。",cmd:"debug 4"},
-      {cat:"debug",name:"无限充能",en:"Debug Flag 8",tier:"S",icon:"充",desc:"主动道具获得无限充能；再次执行可关闭。",cmd:"debug 8"},
-      {cat:"debug",name:"超高幸运",en:"Debug Flag 9",tier:"A",icon:"运",desc:"把幸运提高到很高水平，便于测试触发类效果。",cmd:"debug 9"},
-      {cat:"debug",name:"快速击杀",en:"Debug Flag 10",tier:"A",icon:"杀",desc:"敌人会快速死亡；再次执行可关闭。",cmd:"debug 10"},
-      {cat:"debug",name:"显示碰撞箱",en:"Debug Flag 6",tier:"A",icon:"框",desc:"显示实体碰撞范围，用于观察躲弹判定。",cmd:"debug 6"},
-      {cat:"debug",name:"显示伤害值",en:"Debug Flag 7",tier:"A",icon:"数",desc:"显示伤害数值与相关调试信息。",cmd:"debug 7"},
-      {cat:"debug",name:"显示房间信息",en:"Debug Flag 5",tier:"A",icon:"房",desc:"显示当前房间的调试信息。",cmd:"debug 5"},
-
-      {cat:"supply",name:"99 枚硬币",en:"A Dollar",tier:"S",icon:"$",desc:"通过“一美元”立即补足大量硬币。",cmd:"giveitem c18"},
-      {cat:"supply",name:"99 把钥匙",en:"Skeleton Key",tier:"S",icon:"钥",desc:"通过“骷髅钥匙”立即获得大量钥匙。",cmd:"giveitem c17"},
-      {cat:"supply",name:"99 枚炸弹",en:"Pyro",tier:"S",icon:"弹",desc:"通过“烟火盛宴”立即获得大量炸弹。",cmd:"giveitem c190"},
-      {cat:"supply",name:"生成魂心",en:"Soul Heart",tier:"A",icon:"魂",desc:"在角色附近生成一颗魂心。",cmd:"spawn 5.10.3"},
-      {cat:"supply",name:"生成永恒之心",en:"Eternal Heart",tier:"A",icon:"白",desc:"在角色附近生成一颗永恒之心。",cmd:"spawn 5.10.4"},
-      {cat:"supply",name:"生成金箱",en:"Golden Chest",tier:"A",icon:"箱",desc:"在角色附近生成一个金箱。",cmd:"spawn 5.50.1"},
-      {cat:"supply",name:"生成随机道具",en:"Random Pedestal",tier:"A",icon:"?",desc:"在角色附近生成一个随机道具底座。",cmd:"spawn 5.100.0"},
-      {cat:"supply",name:"清空当前房间敌人",en:"Kill Room",tier:"A",icon:"清",desc:"立即击杀当前房间中的敌人。",cmd:"kill"},
-
-      {cat:"stage",name:"地下室 I",en:"Basement I",tier:"A",icon:"1",desc:"跳转到第一层。",cmd:"stage 1"},
-      {cat:"stage",name:"地下室 II",en:"Basement II",tier:"A",icon:"2",desc:"跳转到第二层。",cmd:"stage 2"},
-      {cat:"stage",name:"洞穴 II",en:"Caves II",tier:"A",icon:"4",desc:"跳转到第四层。",cmd:"stage 4"},
-      {cat:"stage",name:"深牢 II",en:"Depths II",tier:"A",icon:"6",desc:"跳转到妈妈所在主线层。",cmd:"stage 6"},
-      {cat:"stage",name:"子宫 II",en:"Womb II",tier:"A",icon:"8",desc:"跳转到主线后段。",cmd:"stage 8"},
-      {cat:"stage",name:"阴间",en:"Sheol",tier:"A",icon:"9",desc:"跳转到阴间。",cmd:"stage 9"},
-      {cat:"stage",name:"教堂",en:"Cathedral",tier:"A",icon:"10",desc:"跳转到教堂。",cmd:"stage 10"},
-      {cat:"stage",name:"暗室",en:"Dark Room",tier:"A",icon:"11",desc:"跳转到暗室。",cmd:"stage 11"},
-      {cat:"stage",name:"宝箱层",en:"The Chest",tier:"A",icon:"12",desc:"跳转到宝箱层。",cmd:"stage 12"}
-    ];
-
-    var currentCat = "featured";
-    var favorites = {};
-    var historyList = [];
-    var sendBusy = false;
-    var pendingStatusPath = "";
-    var pendingCommand = "";
-    var pendingLabel = "";
-    var pendingStarted = 0;
-    var pendingDeadline = 0;
-    var pendingRepeatCount = 1;
-    var pendingRequestedRepeat = 1;
-    var pendingCompleted = 0;
-    var pendingRepeatLimited = false;
-    var probeBusy = false;
-    var probeStatusPath = "";
-    var probeStarted = 0;
-    var gameKnownRunning = false;
-
-    function safeParse(text, fallback) { try { return JSON.parse(text); } catch(e) { return fallback; } }
-    function loadState() {
-      try {
-        favorites = safeParse(localStorage.getItem("isaac_favorites") || "{}", {});
-        historyList = safeParse(localStorage.getItem("isaac_history") || "[]", []);
-      } catch(e) { favorites = {}; historyList = []; }
-      if (historyList.length) document.getElementById("recent").innerText = "最近：" + historyList[0];
-    }
-    function saveState() {
-      try {
-        localStorage.setItem("isaac_favorites", JSON.stringify(favorites));
-        localStorage.setItem("isaac_history", JSON.stringify(historyList.slice(0,20)));
-      } catch(e) {}
-    }
-    function getCategory(id) { for (var i=0;i<categories.length;i++) if(categories[i].id===id) return categories[i]; return categories[0]; }
-    function countCategory(id) {
-      if (id === "featured") {
-        var count = 0; for (var key in favorites) if(favorites[key]) count++;
-        return count ? count : 12;
-      }
-      var count2=0, i; for(i=0;i<items.length;i++) if(items[i].cat===id) count2++; for(i=0;i<commands.length;i++) if(commands[i].cat===id) count2++; return count2;
-    }
-    function renderNav() {
-      var html="", lastGroup="";
-      for(var i=0;i<categories.length;i++) {
-        var c=categories[i];
-        if(c.group!==lastGroup) { html += '<div class="nav-label">'+c.group+'</div>'; lastGroup=c.group; }
-        html += '<button class="nav-btn '+(c.id===currentCat?'active':'')+'" onclick="selectCategory(\''+c.id+'\')"><span class="nav-icon">'+c.icon+'</span>'+c.name+'<span class="nav-count">'+countCategory(c.id)+'</span></button>';
-      }
-      document.getElementById("nav").innerHTML=html;
-    }
-    function selectCategory(id) {
-      currentCat=id; document.getElementById("search").value=""; renderNav(); renderCards();
-      document.getElementById("content").scrollTop=0;
-    }
-    function escapeHtml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;"); }
-    function getVisibleData() {
-      var result=[], i, hasFav=false;
-      if(currentCat==="featured") {
-        for(i=0;i<items.length;i++) if(favorites[items[i].id]) { result.push(items[i]); hasFav=true; }
-        if(!hasFav) {
-          var picks=[182,331,118,313,581,64,580,105,723,360,698,721];
-          for(i=0;i<picks.length;i++) for(var j=0;j<items.length;j++) if(items[j].id===picks[i]) result.push(items[j]);
-        }
-      } else {
-        for(i=0;i<items.length;i++) if(items[i].cat===currentCat) result.push(items[i]);
-        for(i=0;i<commands.length;i++) if(commands[i].cat===currentCat) result.push(commands[i]);
-      }
-      var q=document.getElementById("search").value.toLowerCase().replace(/^\s+|\s+$/g,"");
-      if(q) {
-        result=[];
-        var all=items.concat(commands);
-        for(i=0;i<all.length;i++) {
-          var d=all[i], hay=(d.name+" "+d.en+" "+d.desc+" "+(d.id||"")+" "+(d.cmd||"")).toLowerCase();
-          if(hay.indexOf(q)>=0) result.push(d);
-        }
-      }
-      return result;
-    }
-    function renderCards() {
-      var c=getCategory(currentCat), q=document.getElementById("search").value;
-      document.getElementById("pageTitle").innerText=q ? "搜索结果" : c.name;
-      document.getElementById("pageDesc").innerText=q ? "正在全库搜索："+q : c.desc;
-      document.getElementById("eyebrow").innerText=q ? "GLOBAL SEARCH" : c.eyebrow;
-      var data=getVisibleData(), html="";
-      if(!data.length) { html='<div class="empty"><div class="empty-big">⌁</div>没有找到匹配内容</div>'; }
-      else {
-        html='<div class="section-title"><strong>'+(q?'匹配项目':(currentCat==='featured'?'优先推荐':'全部项目'))+'</strong>'+data.length+' 项</div><div class="grid">';
-        for(var i=0;i<data.length;i++) html += renderCard(data[i]);
-        html+='</div>';
-      }
-      document.getElementById("cards").innerHTML=html;
-    }
-    function renderCard(d) {
-      var isItem=!!d.id, cmd=d.cmd || ("giveitem c"+d.id), tierClass=d.tier==="A"?" a":"", sigClass=d.tier==="S"?"":" gold";
-      if(d.cat==="explore") sigClass=" blue"; if(d.cat==="defense"||d.cat==="economy") sigClass=" green";
-      var favBtn=isItem?'<button class="fav '+(favorites[d.id]?'on':'')+'" title="收藏" onclick="toggleFav(event,'+d.id+')">★</button>':'';
-      var remove=isItem?'<button class="remove-btn" onclick="sendCommand(\'remove c'+d.id+'\',\'移除 '+escapeHtml(d.name)+'\')">移除</button>':'';
-      var action=isItem?'给予':'执行';
-      return '<div class="card-wrap"><div class="card '+(d.hot?'hot ':'')+(!isItem?'command-card':'')+'"><div class="card-glow"></div><div class="card-head"><div class="sigil'+sigClass+'">'+escapeHtml(d.icon)+'</div><div class="item-main"><div class="item-name">'+escapeHtml(d.name)+'</div><div class="item-en">'+escapeHtml(d.en)+'</div></div><span class="tier'+tierClass+'">'+d.tier+'</span>'+favBtn+'</div><div class="item-desc">'+escapeHtml(d.desc)+'</div><div class="card-foot"><span class="code">'+escapeHtml(cmd)+'</span>'+remove+'<button class="give-btn" onclick="sendCommand(\''+cmd+'\',\''+action+' '+escapeHtml(d.name)+'\')">'+action+'</button></div></div></div>';
-    }
-    function toggleFav(ev,id) {
-      if(ev) ev.cancelBubble=true; favorites[id]=!favorites[id]; saveState(); renderNav(); renderCards();
-      toast(favorites[id]?"已加入常用精选":"已取消收藏", "ok");
-    }
-    function updateGameStatus() {
-      if(probeBusy || sendBusy) return;
-      try {
-        var fso=new ActiveXObject("Scripting.FileSystemObject"), shell=new ActiveXObject("WScript.Shell"), temp=fso.GetSpecialFolder(2).Path;
-        var unique=(new Date().getTime())+"-"+Math.floor(Math.random()*100000);
-        probeStatusPath=fso.BuildPath(temp,"isaac-cn-probe-"+unique+".dat"); probeStarted=new Date().getTime(); probeBusy=true;
-        var ps='powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "'+appDir()+'\\send-command.ps1" -ProbeOnly -StatusFile "'+probeStatusPath+'"';
-        shell.Run(ps,0,false); setTimeout(pollGameProbe,160);
-      } catch(ex) { setGameStatus(false,"检测组件不可用"); probeBusy=false; }
-    }
-    function pollGameProbe() {
-      if(!probeBusy) return;
-      try {
-        var fso=new ActiveXObject("Scripting.FileSystemObject");
-        if(fso.FileExists(probeStatusPath)) {
-          var f=fso.OpenTextFile(probeStatusPath,1,false,0), result=f.ReadAll(); f.Close();
-          try{fso.DeleteFile(probeStatusPath,true);}catch(ignore){}
-          probeBusy=false;
-          if(result.indexOf("RUNNING")===0) setGameStatus(true,"游戏运行中"); else setGameStatus(false,"未检测到游戏");
-          return;
-        }
-      } catch(e) {}
-      if(new Date().getTime()-probeStarted>4500) { probeBusy=false; setGameStatus(false,"检测超时，可直接尝试发送"); return; }
-      setTimeout(pollGameProbe,160);
-    }
-    function setGameStatus(on,label) {
-      gameKnownRunning=on;
-      var dot=document.getElementById("statusDot"), text=document.getElementById("statusText");
-      dot.className="status-dot"+(on?" online":""); text.innerText=label;
-    }
-    function appDir() {
-      var p=decodeURIComponent(location.pathname).replace(/^\//,"").replace(/\//g,"\\");
-      return p.substring(0,p.lastIndexOf("\\"));
-    }
-    function writeCommandFile(cmd) {
-      var fso=new ActiveXObject("Scripting.FileSystemObject"), temp=fso.GetSpecialFolder(2).Path, unique=(new Date().getTime())+"-"+Math.floor(Math.random()*100000);
-      var commandPath=fso.BuildPath(temp,"isaac-cn-command-"+unique+".dat"), statusPath=fso.BuildPath(temp,"isaac-cn-status-"+unique+".dat");
-      var f=fso.CreateTextFile(commandPath,true,true); f.Write(cmd); f.Close();
-      return {command:commandPath,status:statusPath};
-    }
-    function isRepeatSafe(cmd) { return /^\s*(giveitem|spawn)\s+/i.test(String(cmd)); }
-    function updateRepeatWarning(count) {
-      var el=document.getElementById("repeatWarning");
-      el.style.display=count>20?"inline-block":"none";
-    }
-    function normalizeRepeat(finalize) {
-      var el=document.getElementById("repeatCount"), raw=String(el.value).replace(/[^0-9]/g,"");
-      if(!raw) {
-        if(finalize) el.value="1";
-        updateRepeatWarning(1); return 1;
-      }
-      var count=parseInt(raw,10); if(isNaN(count)) count=1;
-      if(count<1) count=1; if(count>99) count=99;
-      el.value=String(count); updateRepeatWarning(count); return count;
-    }
-    function getRepeatCount() { return normalizeRepeat(true); }
-    function adjustRepeat(delta) {
-      var count=getRepeatCount()+delta; if(count<1) count=1; if(count>99) count=99;
-      document.getElementById("repeatCount").value=String(count); updateRepeatWarning(count);
-    }
-    function resetRepeat() { document.getElementById("repeatCount").value="1"; updateRepeatWarning(1); }
-    function sendCommand(cmd,label) {
-      cmd=String(cmd).replace(/^\s+|\s+$/g,""); if(!cmd) return;
-      document.getElementById("manualCommand").value=cmd;
-      document.getElementById("recent").innerText="当前："+cmd;
-      if(sendBusy) { toast("上一条命令仍在发送，请稍候。", "warn"); return; }
-      if(cmd.length>500 || /[\r\n]/.test(cmd)) { toast("为避免误执行，每次只能发送一条、最多 500 字符的命令。", "warn"); return; }
-      try {
-        var shell=new ActiveXObject("WScript.Shell"), base=appDir(), files=writeCommandFile(cmd);
-        var mode=document.getElementById("sendMode").value, requested=getRepeatCount(), repeat=requested, limited=false;
-        if(requested>1 && !isRepeatSafe(cmd)) { repeat=1; limited=true; toast("为避免危险操作重复执行，此命令只执行 1 次。", "warn"); }
-        var ps='powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "'+base+'\\send-command.ps1" -CommandFile "'+files.command+'" -StatusFile "'+files.status+'" -RepeatCount '+repeat+(mode==="open"?' -ConsoleAlreadyOpen':'');
-        sendBusy=true; pendingStatusPath=files.status; pendingCommand=cmd; pendingLabel=label||"命令"; pendingStarted=new Date().getTime();
-        pendingDeadline=pendingStarted+Math.min(70000,Math.max(8500,repeat*600+10000)); pendingRepeatCount=repeat; pendingRequestedRepeat=requested; pendingCompleted=0; pendingRepeatLimited=limited;
-        setSendingState(true,0,repeat);
-        shell.Run(ps,0,false); setTimeout(pollSendStatus,140);
-      } catch(ex) { sendBusy=false; setSendingState(false,0,1); copyText(cmd); toast("自动发送失败，命令已复制。", "warn"); }
-    }
-    function setSendingState(busy,done,total) {
-      var btn=document.getElementById("sendBtn"); btn.className="send-btn"+(busy?" disabled":"");
-      btn.innerText=busy?(total>1?("正在执行 "+done+"/"+total):"正在发送…"):"发送到游戏";
-    }
-    function pollSendStatus() {
-      if(!sendBusy) return;
-      try {
-        var fso=new ActiveXObject("Scripting.FileSystemObject");
-        if(fso.FileExists(pendingStatusPath)) {
-          var f=fso.OpenTextFile(pendingStatusPath,1,false,0), result=f.ReadAll(); f.Close();
-          if(String(result).indexOf("PROGRESS|")===0) {
-            var progress=String(result).split("|"), done=parseInt(progress[1],10)||0, total=parseInt(progress[2],10)||pendingRepeatCount;
-            if(done>pendingCompleted) { pendingCompleted=done; setSendingState(true,done,total); }
-            setTimeout(pollSendStatus,140); return;
-          }
-          try { fso.DeleteFile(pendingStatusPath,true); } catch(ignore) {}
-          finishSend(result); return;
-        }
-      } catch(e) {}
-      if(new Date().getTime()>pendingDeadline) {
-        if(pendingCompleted>0) finishSend("PARTIAL|"+pendingCompleted+"|"+pendingRepeatCount+"|TIMEOUT");
-        else finishSend("ERR|TIMEOUT");
-        return;
-      }
-      setTimeout(pollSendStatus,140);
-    }
-    function finishSend(result) {
-      var text=String(result), parts=text.split("|"), historyEntry="";
-      sendBusy=false; setSendingState(false,0,1);
-      if(text.indexOf("SENT|")===0) {
-        var actual=parseInt(parts[2],10)||1;
-        historyEntry=pendingCommand+(actual>1?(" ×"+actual):"");
-        historyList.unshift(historyEntry); historyList=historyList.slice(0,20); saveState(); document.getElementById("recent").innerText="最近："+historyEntry;
-        resetRepeat();
-        if(parts[1]==="CLOSE_FAILED") toast(pendingLabel+" · 已执行 "+actual+" 次，但控制台关闭按键被系统拦截", "warn");
-        else if(pendingRepeatLimited) toast(pendingLabel+" · 按安全规则仅执行 1 次，并已关闭控制台", "warn");
-        else toast(pendingLabel+" · 已执行 "+actual+" 次并关闭游戏控制台", "ok");
-      } else if(text.indexOf("PARTIAL|")===0) {
-        var completed=parseInt(parts[1],10)||0, total=parseInt(parts[2],10)||pendingRepeatCount, reason=parts[3]||"UNKNOWN";
-        if(completed>0) {
-          historyEntry=pendingCommand+(completed>1?(" ×"+completed):"");
-          historyList.unshift(historyEntry); historyList=historyList.slice(0,20); saveState(); document.getElementById("recent").innerText="最近："+historyEntry;
-          resetRepeat();
-        }
-        var reasons={FOCUS_LOST:"游戏中途失去焦点",INPUT_BLOCKED:"按键注入被系统拦截",TIMEOUT:"等待发送器超时"};
-        toast(pendingLabel+" · 仅完成 "+completed+"/"+total+"（"+(reasons[reason]||reason)+"），请勿直接重复领取", "warn");
-      } else {
-        copyText(pendingCommand);
-        var code=parts[1]||"UNKNOWN", tips={NO_GAME:"游戏已关闭，命令已复制。",NO_WINDOW:"没有找到游戏窗口，请进入一局后重试。",FOCUS_FAILED:"无法把游戏切到前台；请让游戏和工具使用相同权限。",FOCUS_LOST:"输入前游戏失去焦点，命令已复制。",INPUT_BLOCKED:"Windows 阻止了按键输入，命令已复制。",TIMEOUT:"发送器响应超时；未确认执行成功，命令已复制。",REPEAT_RANGE:"执行次数必须为 1–99。",REPEAT_NOT_ALLOWED:"该命令不允许批量执行。"};
-        toast(tips[code]||"自动发送失败（"+code+"），命令已复制。", "warn");
-      }
-      pendingStatusPath=""; pendingCommand=""; pendingLabel=""; pendingDeadline=0; pendingRepeatCount=1; pendingRequestedRepeat=1; pendingCompleted=0; pendingRepeatLimited=false;
-    }
-    function copyText(text) {
-      try { window.clipboardData.setData("Text",text); return true; } catch(e) { return false; }
-    }
-    function copyManual() { var c=document.getElementById("manualCommand").value; copyText(c); toast("命令已复制", "ok"); }
-    function sendManual() { sendCommand(document.getElementById("manualCommand").value,"手动命令"); }
-    function showHistory() {
-      if(!historyList.length) { toast("还没有发送过命令", "warn"); return; }
-      document.getElementById("manualCommand").value=String(historyList[0]).replace(/ ×\d+$/,"");
-      toast("最近命令："+historyList.slice(0,4).join("　|　"), "");
-    }
-    function confirmClearItems() {
-      if(confirm("确定移除当前角色的全部道具吗？\n\n这会执行 remove *，建议先确认当前局是否需要保留。")) sendCommand("remove *","清空全部道具");
-    }
-    function showTutorial() { document.getElementById("tutorialModal").style.display="flex"; }
-    function hideTutorial() { document.getElementById("tutorialModal").style.display="none"; try{localStorage.setItem("isaac_tutorial_seen","1");}catch(e){} }
-    var toastTimer=null;
-    function toast(text,type) {
-      var el=document.getElementById("toast"); el.className="toast "+(type||""); el.innerText=text; el.style.display="block";
-      if(toastTimer) clearTimeout(toastTimer); toastTimer=setTimeout(function(){el.style.display="none";},2800);
-    }
-    function init() {
-      try { window.resizeTo(1280,840); window.moveTo(Math.max(0,(screen.availWidth-1280)/2),Math.max(0,(screen.availHeight-840)/2)); } catch(e) {}
-      loadState(); renderNav(); renderCards(); updateGameStatus(); setInterval(updateGameStatus,3500);
-      document.getElementById("search").onkeyup=function(){renderCards();};
-      document.getElementById("manualCommand").onkeydown=function(e){e=e||window.event;if(e.keyCode===13)sendManual();};
-      document.onkeydown=function(e){e=e||window.event;if(e.ctrlKey&&e.keyCode===75){document.getElementById("search").focus();e.returnValue=false;}};
-      try { if(localStorage.getItem("isaac_tutorial_seen")!=="1") setTimeout(showTutorial,350); } catch(e) { setTimeout(showTutorial,350); }
-    }
-    window.onload=init;
-  </script>
+  <script type="text/javascript" src="desktop/catalog.js"></script>
+  <script type="text/javascript" src="desktop/curated-aliases.js"></script>
+  <script type="text/javascript" src="desktop/state.js"></script>
+  <script type="text/javascript" src="desktop/search.js"></script>
+  <script type="text/javascript" src="desktop/queue.js"></script>
+  <script type="text/javascript" src="desktop/app.js"></script>
 </body>
 </html>
