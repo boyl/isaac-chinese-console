@@ -105,7 +105,7 @@ public static class IsaacConsoleWindow {
     $window = [IntPtr]::Zero
     do {
         Start-Sleep -Milliseconds 200
-        $window = [IsaacConsoleWindow]::FindVisibleWindow('以撒 · 中文控制台 desktop-v1.5.0')
+        $window = [IsaacConsoleWindow]::FindVisibleWindow('以撒 · 中文控制台 desktop-v1.5.1')
         if ($window -ne [IntPtr]::Zero) { break }
         $process.Refresh()
         if ($process.HasExited) { throw ("MSHTA_EXITED: {0}" -f $process.ExitCode) }

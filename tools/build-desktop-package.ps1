@@ -1,6 +1,6 @@
 ﻿param(
     [string]$OutputRoot = (Join-Path (Split-Path -Parent $PSScriptRoot) 'dist'),
-    [string]$Version = 'desktop-v1.5.0'
+    [string]$Version = 'desktop-v1.5.1'
 )
 
 $ErrorActionPreference = 'Stop'

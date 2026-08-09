@@ -1,4 +1,4 @@
-以撒中文控制台 desktop-v1.5.0 · 常见问题
+以撒中文控制台 desktop-v1.5.1 · 常见问题
 
 1. 没有窗口？完整解压后从文件资源管理器运行 START.cmd，查看 %LOCALAPPDATA%\IsaacChineseConsole\launcher.log。
 
