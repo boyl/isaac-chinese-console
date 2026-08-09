@@ -13,7 +13,11 @@
     bridgeError = String(host && host.error || "HTA 宿主桥不可用");
   }
   function trim(value) { return String(value || "").replace(/^\s+|\s+$/g, ""); }
-  function safeRepeat(command) { return /^\s*(giveitem|spawn)\s+/i.test(String(command || "")); }
+  function safeRepeat(command) {
+    var value = trim(command);
+    if (/^giveitem\s+[tkp]\d+\s*$/i.test(value)) return false;
+    return /^(giveitem|spawn)\s+/i.test(value);
+  }
   function normalize(command, repeat) {
     command = trim(command);
     if (!command || command.length > 500 || /[\r\n]/.test(command)) return null;
@@ -56,7 +60,7 @@
   function clear() { steps = []; persist(); }
   function risk(command) {
     var value = trim(command).toLowerCase();
-    if (/^(giveitem|spawn)\s+/.test(value)) return { key: "repeatable", label: "可重复" };
+    if (safeRepeat(value)) return { key: "repeatable", label: "可重复" };
     if (/^(remove|stage|goto|restart|kill|debug|lua|luamod|reloadshaders)(\s|$)/.test(value)) return { key: "danger", label: "状态变更" };
     return { key: "unknown", label: "自定义" };
   }

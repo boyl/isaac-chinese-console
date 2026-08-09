@@ -135,7 +135,8 @@ try {
         if ($requested -lt 1 -or $requested -gt 99) { throw 'REPEAT_RANGE' }
         $repeat = $requested
         $limited = $false
-        if ($repeat -gt 1 -and $command -notmatch '^(giveitem|spawn)\s+') { $repeat = 1; $limited = $true }
+        $singleObject = $command -match '^giveitem\s+[tkp]\d+\s*$'
+        if ($repeat -gt 1 -and ($singleObject -or $command -notmatch '^(giveitem|spawn)\s+')) { $repeat = 1; $limited = $true }
         $normalized.Add([pscustomobject]@{
             stepId = if ([string]::IsNullOrWhiteSpace([string]$step.stepId)) { 'step-' + $normalized.Count } else { [string]$step.stepId }
             label = if ([string]::IsNullOrWhiteSpace([string]$step.label)) { $command } else { ([string]$step.label).Substring(0, [Math]::Min(120, ([string]$step.label).Length)) }
