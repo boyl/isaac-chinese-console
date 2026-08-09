@@ -14,6 +14,7 @@ const ids = [
   "queueProgress","queueList","executeQueueBtn","cancelQueueBtn","modalTitle","modalBody","modalBackdrop","toast","sendBtn"
 ];
 const elements = {};
+const missingElements = {};
 for (const id of ids) elements[id] = element(id);
 elements.search.tagName = elements.manualCommand.tagName = elements.repeatCount.tagName = "INPUT";
 elements.sendMode.tagName = "SELECT";
@@ -21,14 +22,15 @@ elements.manualCommand.value = "giveitem c182";
 elements.repeatCount.value = "1";
 elements.sendMode.value = "auto";
 
+let intervalCallback = null;
 const document = {
   documentElement: { clientWidth: 1280 },
-  getElementById(id) { if (!elements[id]) elements[id] = element(id); return elements[id]; },
+  getElementById(id) { if (missingElements[id]) return null; if (!elements[id]) elements[id] = element(id); return elements[id]; },
   onkeydown: null
 };
 const window = {
   document, location: { pathname: "/C:/test/IsaacConsole.hta" }, screen: { availWidth: 1920, availHeight: 1080 },
-  resizeTo() {}, moveTo() {}, setTimeout, clearTimeout, setInterval() { return 1; }, clearInterval() {},
+  resizeTo() {}, moveTo() {}, setTimeout, clearTimeout, setInterval(callback) { intervalCallback = callback; return 1; }, clearInterval() {},
   confirm() { return true; }, prompt() { return "测试方案"; }, event: null
 };
 window.window = window;
@@ -92,4 +94,15 @@ document.documentElement.clientWidth = 900; window.onresize();
 assert(elements.pageIndicator.innerText === "1 / 4", "900px minimum layout page budget failed");
 document.documentElement.clientWidth = 1920; window.onresize();
 assert(elements.pageIndicator.innerText === "1 / 3", "wide layout page budget failed");
+
+let pendingProbe = null;
+window.IsaacQueue.probe = function (callback) { pendingProbe = callback; };
+intervalCallback();
+assert(typeof pendingProbe === "function", "game probe callback was not scheduled");
+missingElements.statusDot = true;
+missingElements.statusText = true;
+pendingProbe(false, { errorCode: "TIMEOUT" });
+delete missingElements.statusDot;
+delete missingElements.statusText;
+
 console.log("app DOM smoke tests passed");

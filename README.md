@@ -1,12 +1,12 @@
-# 以撒中文控制台 desktop-v1.5.0
+# 以撒中文控制台 desktop-v1.5.1
 
 面向 Windows / Steam 版《The Binding of Isaac: Rebirth》的离线中文图形控制台。无需安装 Mod，不联网、不读取存档；工具通过游戏原生调试控制台提交命令。
 
 ## 下载与启动
 
-- 推荐下载：[isaac-chinese-console-desktop-v1.5.0.zip](https://github.com/boyl/isaac-chinese-console/releases/download/desktop-v1.5.0/isaac-chinese-console-desktop-v1.5.0.zip)
-- 版本说明：[desktop-v1.5.0 Release](https://github.com/boyl/isaac-chinese-console/releases/tag/desktop-v1.5.0)
-- ZIP SHA-256：`5A9C19CC99DF7FAF7F962687076C379F85537D53091CD95BB63223003E0F1E28`
+- 推荐下载：[isaac-chinese-console-desktop-v1.5.1.zip](https://github.com/boyl/isaac-chinese-console/releases/download/desktop-v1.5.1/isaac-chinese-console-desktop-v1.5.1.zip)
+- 版本说明：[desktop-v1.5.1 Release](https://github.com/boyl/isaac-chinese-console/releases/tag/desktop-v1.5.1)
+- ZIP SHA-256：`9BD887442422FF047EDF0EC02BA184EACF9A32B3C8EA6C89B4BBF42989AB23E1`
 - 必须完整解压 ZIP，再从文件资源管理器运行 `START.cmd`；不要在 ZIP 或聊天附件预览中启动。
 - 首次使用先运行 `一键环境检测.cmd`，再关闭游戏并运行 `开启游戏控制台.cmd`。
 - 启动游戏并进入一局，最后运行 `START.cmd`。
@@ -49,6 +49,12 @@
 发布构建采用显式白名单，并阻断：ZIP 超过 131072 字节、解压后超过 327680 字节、包含校验文件后超过 20 个文件、运行模块孤立、PowerShell AST 解析失败或内部函数不可达。
 
 ## 更新日志
+
+### desktop-v1.5.1（2026-08-09）
+
+- 修复启动错误页替换 DOM 后，异步游戏状态探测访问已删除节点而产生的二次空引用异常。
+- 启动错误日志和错误页只记录首次异常，避免后续异常覆盖真正根因。
+- 增加异步状态节点缺失与重复 `window.onerror` 回归测试，并通过完整发布验证。
 
 ### desktop-v1.5.0（2026-08-09）
 

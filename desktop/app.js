@@ -285,8 +285,10 @@
   function updateGameStatus() {
     if (root.IsaacQueue.isBusy()) return;
     root.IsaacQueue.probe(function (running, status) {
-      el("statusDot").className = "status-dot" + (running ? " online" : "");
-      el("statusText").innerText = status && status.errorCode === "NO_BRIDGE" ? ("脚本桥错误：" + root.IsaacQueue.getBridgeError()) : (running ? "游戏运行中" : "未检测到游戏");
+      var statusDot = el("statusDot"), statusText = el("statusText");
+      if (!statusDot || !statusText) return;
+      statusDot.className = "status-dot" + (running ? " online" : "");
+      statusText.innerText = status && status.errorCode === "NO_BRIDGE" ? ("脚本桥错误：" + root.IsaacQueue.getBridgeError()) : (running ? "游戏运行中" : "未检测到游戏");
     });
   }
 

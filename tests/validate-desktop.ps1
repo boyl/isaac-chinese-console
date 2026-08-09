@@ -15,7 +15,7 @@ if (@($startBytes | Where-Object { $_ -gt 127 }).Count -gt 0) { throw 'START.cmd
 $startCmdText = [Text.Encoding]::ASCII.GetString($startBytes)
 if ($startCmdText -notmatch 'WindowsPowerShell\\v1\.0\\powershell\.exe') { throw 'START.cmd does not use the fixed Windows PowerShell path.' }
 $startScript = Get-Content -LiteralPath (Join-Path $root 'start-console.ps1') -Raw
-foreach ($marker in @('PACKAGE_FILE_MISSING','VISIBLE_WINDOW_TIMEOUT','launcher-status.json','desktop-v1.5.0')) {
+foreach ($marker in @('PACKAGE_FILE_MISSING','VISIBLE_WINDOW_TIMEOUT','launcher-status.json','desktop-v1.5.1')) {
     if ($startScript -notmatch [regex]::Escape($marker)) { throw "Self-checking launcher marker missing: $marker" }
 }
 
