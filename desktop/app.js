@@ -28,25 +28,31 @@
     toastTimer = setTimeout(function () { node.style.display = "none"; }, 3400);
   }
   function pageSize() { return document.documentElement.clientWidth >= 1180 ? 18 : 12; }
-  function isFavorite(entry) { return !!(entry && entry.id && state.favorites[String(entry.id)]); }
+  function isFavorite(entry) { return !!(entry && entry.objectKey && state.favorites[entry.objectKey]); }
 
   function loadCatalog() {
     importedCatalog = root.IsaacState.loadCatalog();
     root.IsaacSearch.configure(catalog.curatedItems, catalog.commands, importedCatalog);
-    var count = importedCatalog ? importedCatalog.items.length : 74;
-    el("catalogStatus").innerText = importedCatalog ?
-      ("EID 全库 " + count + " 项 · " + (importedCatalog.pinyinAvailable ? "含拼音" : "无全库拼音")) :
-      "精选目录 74 项 · EID 尚未导入";
+    var count = importedCatalog && importedCatalog.descriptionCount ? importedCatalog.descriptionCount : 0;
+    el("catalogStatus").innerText = "内置目录 1056 项 · " + (count ? ("EID 说明 " + count + " 条") : "EID 说明未导入");
   }
 
   function categoryEntries(id) {
     var result = [], items = root.IsaacSearch.getItems(), commands = root.IsaacSearch.getCommands(), i;
     if (id === "featured") {
-      for (i = 0; i < items.length; i++) if (isFavorite(items[i])) result.push(items[i]);
-      if (!result.length) for (i = 0; i < defaultFeatured.length; i++) if (root.IsaacSearch.getItem(defaultFeatured[i])) result.push(root.IsaacSearch.getItem(defaultFeatured[i]));
+      var seen = {}, featured;
+      for (i = 0; i < defaultFeatured.length; i++) {
+        featured = root.IsaacSearch.getItem(defaultFeatured[i]);
+        if (featured) { result.push(featured); seen[featured.objectKey] = true; }
+      }
+      for (i = 0; i < items.length; i++) if (isFavorite(items[i]) && !seen[items[i].objectKey]) result.push(items[i]);
       return result;
     }
-    for (i = 0; i < items.length; i++) if (!items[i].catalogOnly && items[i].cat === id) result.push(items[i]);
+    if (id === "all_items" || id === "trinkets" || id === "cards" || id === "pills") {
+      for (i = 0; i < items.length; i++) if (items[i].catalogCategory === id) result.push(items[i]);
+      return result;
+    }
+    for (i = 0; i < items.length; i++) if (items[i].curatedOrder != null && items[i].cat === id) result.push(items[i]);
     for (i = 0; i < commands.length; i++) {
       if (commands[i].cat !== id) continue;
       if (id === "stage" && ((commands[i].stageMode === "greed") !== (stageMode === "greed"))) continue;
@@ -81,7 +87,7 @@
     el("pageDesc").innerText = query ? ("中文、英文、拼音、命令和 ID：" + query) : c.desc;
     el("sectionLabel").innerText = query ? "匹配项目" : (currentCategory === "featured" ? "优先推荐" : "全部项目");
     el("resultCount").innerText = allVisible.length + " 项";
-    el("resultSource").innerText = query && importedCatalog ? "本机 EID 全库" : "";
+    el("resultSource").innerText = query ? "内置完整目录" : "";
     el("stageMode").className = "stage-mode" + (!query && currentCategory === "stage" ? " show" : "");
     el("stageNormal").className = stageMode === "normal" ? "active" : "";
     el("stageGreed").className = stageMode === "greed" ? "active" : "";
@@ -94,9 +100,9 @@
   }
   function renderCard(entry, index) {
     var isItem = entry.kind === "item", command = entry.command || entry.cmd, description = entry.desc || entry.description || "本机目录条目；执行前请核对实际命令。";
-    var favorite = isItem ? '<button class="fav ' + (isFavorite(entry) ? 'on' : '') + '" title="收藏" onclick="event.cancelBubble=true;IsaacApp.toggleFavorite(' + index + ')">★</button>' : '';
+    var favorite = isItem && entry.canFavorite ? '<button class="fav ' + (isFavorite(entry) ? 'on' : '') + '" title="收藏" onclick="event.cancelBubble=true;IsaacApp.toggleFavorite(' + index + ')">★</button>' : '';
     return '<div class="card-wrap"><div class="card ' + (entry.hot ? 'hot ' : '') + '" id="card-' + index + '" tabindex="0" onclick="IsaacApp.openDetail(' + index + ')" onfocus="IsaacApp.focusCard(' + index + ')">' +
-      '<div class="card-head"><div class="sigil' + sigilClass(entry) + '">' + esc(entry.icon || (isItem ? entry.id : '⚙')) + '</div><div class="item-main"><div class="item-name">' + esc(entry.name) + '</div><div class="item-en">' + esc(entry.en) + '</div></div>' +
+      '<div class="card-head"><div class="sigil' + sigilClass(entry) + '">' + esc(isItem && entry.objectType ? entry.objectType + entry.id : (entry.icon || '⚙')) + '</div><div class="item-main"><div class="item-name">' + esc(entry.name) + '</div><div class="item-en">' + esc(entry.en) + '</div></div>' +
       (entry.tier ? '<span class="tier ' + (entry.tier === 'A' ? 'a' : '') + '">' + esc(entry.tier) + '</span>' : '') + favorite + '</div>' +
       '<div class="item-desc">' + esc(description) + '</div><div class="card-foot"><span class="code">' + esc(command) + '</span>' +
       '<button class="card-action" onclick="event.cancelBubble=true;IsaacApp.addEntry(' + index + ')">入队</button><button class="card-action primary" onclick="event.cancelBubble=true;IsaacApp.sendEntry(' + index + ')">' + (isItem ? '给予' : '执行') + '</button></div></div></div>';
@@ -137,18 +143,19 @@
   function adjustManualRepeat(delta) { el("repeatCount").value = String(Math.max(1, Math.min(99, normalizeManualRepeat() + delta))); normalizeManualRepeat(); }
   function entryAt(index) { return index >= 0 && index < pageEntries.length ? pageEntries[index] : null; }
   function toggleFavorite(index) {
-    var entry = entryAt(index); if (!entry || !entry.id) return;
-    var key = String(entry.id); if (state.favorites[key]) delete state.favorites[key]; else state.favorites[key] = true;
+    var entry = entryAt(index); if (!entry || !entry.objectKey) return;
+    var key = entry.objectKey; if (state.favorites[key]) delete state.favorites[key]; else state.favorites[key] = true;
     root.IsaacState.save(); renderAll();
   }
   function openDetail(index) {
     var entry = entryAt(index); if (!entry) return; detailEntry = entry; setManual(entry);
-    var isItem = entry.kind === "item", description = entry.desc || entry.description || "此条目来自本机 EID 目录；当前没有可用说明。";
-    el("detailBody").innerHTML = '<div class="detail-name">' + esc(entry.name) + '</div><div class="detail-en">' + esc(entry.en) + (entry.id ? ' · ID ' + entry.id : '') + '</div>' +
+    var isItem = entry.kind === "item", removable = isItem && entry.canRemove, description = entry.desc || entry.description || "内置目录条目；当前没有详细说明。";
+    var removeCommand = removable ? "remove " + entry.objectType + entry.id : "";
+    el("detailBody").innerHTML = '<div class="detail-name">' + esc(entry.name) + '</div><div class="detail-en">' + esc(entry.en) + (entry.objectKey ? ' · ID ' + entry.objectKey : '') + '</div>' +
       '<div class="detail-desc">' + esc(description) + '</div><div class="detail-code">' + esc(entry.command || entry.cmd) + '</div>' +
-      (isItem ? '<div class="detail-note">移除只会提交 remove c' + entry.id + '；它不会回滚拾取时产生的资源、实体、房间或生命变化。</div>' : '<div class="detail-note">自定义及流程命令可能改变当前局，请在一次性测试存档中使用。</div>') +
-      '<div class="detail-actions"><button class="small-btn" onclick="IsaacApp.detailFavorite()">' + (isFavorite(entry) ? '取消收藏' : '收藏') + '</button>' +
-      (isItem ? '<button class="danger-btn" onclick="IsaacApp.removeDetailItem()">移除道具</button>' : '') + '<button class="small-btn" onclick="IsaacApp.addDetailToQueue()">加入队列</button><button class="danger-btn" onclick="IsaacApp.sendDetail()">立即执行</button></div>';
+      (removable ? '<div class="detail-note">移除只会提交 ' + esc(removeCommand) + '；它不会回滚已经产生的资源、实体、房间或生命变化。</div>' : '<div class="detail-note">此类型不提供移除；自定义及流程命令请在一次性测试存档中使用。</div>') +
+      '<div class="detail-actions">' + (isItem ? '<button class="small-btn" onclick="IsaacApp.detailFavorite()">' + (isFavorite(entry) ? '取消收藏' : '收藏') + '</button>' : '') +
+      (removable ? '<button class="danger-btn" onclick="IsaacApp.removeDetailItem()">移除本体</button>' : '') + '<button class="small-btn" onclick="IsaacApp.addDetailToQueue()">加入队列</button><button class="danger-btn" onclick="IsaacApp.sendDetail()">立即执行</button></div>';
     el("detailDrawer").className = "drawer open"; el("queueDrawer").className = "drawer";
   }
   function closeDrawers() { el("detailDrawer").className = "drawer"; el("queueDrawer").className = "drawer"; }
@@ -219,7 +226,7 @@
   function deleteSavedQueue(index) { if (state.savedQueues[index] && confirm("删除方案“" + state.savedQueues[index].name + "”？")) { state.savedQueues.splice(index, 1); root.IsaacState.save(); showSavedQueues(); } }
 
   function runImport(path) {
-    if (importBusy) return; importBusy = true; toast("正在从本机 EID 生成离线目录…", "");
+    if (importBusy) return; importBusy = true; toast("正在从本机 EID 导入详细说明…", "");
     var host = root.IsaacHost;
     if (!host || !host.available || !host.fso || !host.shell) { importBusy = false; toast("Windows 脚本宿主桥不可用，无法导入 EID。", "warn"); return; }
     var fso = host.fso, shell = host.shell, temp = fso.GetSpecialFolder(2).Path;
@@ -248,10 +255,10 @@
     importBusy = false;
     try {
       var shellApplication = root.IsaacHost && root.IsaacHost.shellApplication;
-      if (!shellApplication) { toast("系统目录选择器不可用，继续使用 74 项精选。", "warn"); return; }
+      if (!shellApplication) { toast("系统目录选择器不可用；内置 1056 项仍可完整使用。", "warn"); return; }
       var dialog = shellApplication.BrowseForFolder(0, "选择 External Item Descriptions 根目录", 0, 0);
-      if (dialog) runImport(dialog.Self.Path); else toast("未选择 EID 目录，继续使用 74 项精选。", "warn");
-    } catch (ignore) { toast("未找到 EID，继续使用 74 项精选。", "warn"); }
+      if (dialog) runImport(dialog.Self.Path); else toast("未选择 EID 目录；内置 1056 项仍可完整使用。", "warn");
+    } catch (ignore) { toast("未找到 EID；内置 1056 项仍可完整使用。", "warn"); }
   }
   function importCatalog() {
     if (!root.IsaacQueue.bridgeAvailable() || root.IsaacState.isMemoryMode()) { toast("Windows 脚本组件被拦截，当前只能浏览内置目录。请运行一键环境检测。", "warn"); return; }
@@ -317,8 +324,8 @@
     dragStart: dragStart, dragOver: dragOver, dropStep: dropStep, saveCurrentQueue: saveCurrentQueue,
     showHistory: showHistory, showSavedQueues: showSavedQueues, closeModal: closeModal, loadSavedQueue: loadSavedQueue, deleteSavedQueue: deleteSavedQueue,
     importCatalog: importCatalog,
-    detailFavorite: function () { if (!detailEntry || !detailEntry.id) return; var fake = pageEntries.indexOf ? pageEntries.indexOf(detailEntry) : -1; if (fake >= 0) toggleFavorite(fake); else { var key=String(detailEntry.id); if(state.favorites[key])delete state.favorites[key];else state.favorites[key]=true;root.IsaacState.save();renderAll(); } closeDrawers(); },
-    removeDetailItem: function () { if (detailEntry && detailEntry.id && confirm("提交 remove c" + detailEntry.id + "？\n\n这只会移除道具，不会回滚已经产生的效果。")) sendSteps([{stepId:"remove-"+new Date().getTime(),label:"移除 "+detailEntry.name,command:"remove c"+detailEntry.id,repeat:1,source:"detail"}]); },
+    detailFavorite: function () { if (!detailEntry || !detailEntry.objectKey) return; var fake = pageEntries.indexOf ? pageEntries.indexOf(detailEntry) : -1; if (fake >= 0) toggleFavorite(fake); else { var key=detailEntry.objectKey; if(state.favorites[key])delete state.favorites[key];else state.favorites[key]=true;root.IsaacState.save();renderAll(); } closeDrawers(); },
+    removeDetailItem: function () { var command; if (detailEntry && detailEntry.canRemove) { command="remove "+detailEntry.objectType+detailEntry.id; if (confirm("提交 " + command + "？\n\n这只会移除本体，不会回滚已经产生的效果。")) sendSteps([{stepId:"remove-"+new Date().getTime(),label:"移除 "+detailEntry.name,command:command,repeat:1,source:"detail"}]); } },
     addDetailToQueue: function () { if (detailEntry) addCommand(detailEntry.command||detailEntry.cmd,detailEntry.name,normalizeManualRepeat(),detailEntry.kind); },
     sendDetail: function () { if (detailEntry) sendSteps([{stepId:"detail-"+new Date().getTime(),label:detailEntry.name,command:detailEntry.command||detailEntry.cmd,repeat:normalizeManualRepeat(),source:detailEntry.kind}]); }
   };

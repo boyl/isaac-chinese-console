@@ -1,7 +1,7 @@
 (function (root) {
   "use strict";
   root.IsaacCatalog = {
-    version: "desktop-v1.4.3",
+    version: "desktop-v1.5.0",
     categories: [
       {
         "id": "featured",
@@ -10,6 +10,38 @@
         "name": "常用精选",
         "desc": "你收藏的道具，以及每类最常用的高强度选择。",
         "eyebrow": "CURATED LOADOUT"
+      },
+      {
+        "id": "all_items",
+        "group": "物品",
+        "icon": "全",
+        "name": "全部收藏品",
+        "desc": "完整内置收藏品目录；精选条目保持原分类与说明。",
+        "eyebrow": "COLLECTIBLES"
+      },
+      {
+        "id": "trinkets",
+        "group": "物品",
+        "icon": "饰",
+        "name": "饰品",
+        "desc": "官方基础饰品；给予后可移除饰品本体。",
+        "eyebrow": "TRINKETS"
+      },
+      {
+        "id": "cards",
+        "group": "物品",
+        "icon": "卡",
+        "name": "卡牌/符文",
+        "desc": "官方卡牌、符文、逆位牌和魂石；固定单次给予。",
+        "eyebrow": "CARDS & RUNES"
+      },
+      {
+        "id": "pills",
+        "group": "物品",
+        "icon": "药",
+        "name": "胶囊效果",
+        "desc": "官方基础胶囊效果；固定单次给予。",
+        "eyebrow": "PILL EFFECTS"
       },
       {
         "id": "damage",

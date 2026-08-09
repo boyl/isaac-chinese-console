@@ -34,7 +34,7 @@ try {
 
     $required = @(
         'IsaacConsole.hta', 'send-command.ps1', 'import-eid-catalog.ps1',
-        'desktop\app.css', 'desktop\app.js', 'desktop\catalog.js', 'desktop\curated-aliases.js',
+        'desktop\app.css', 'desktop\app.js', 'desktop\catalog.js', 'desktop\objects.js',
         'desktop\state.js', 'desktop\search.js', 'desktop\queue.js'
     )
     foreach ($relative in $required) {
@@ -105,7 +105,7 @@ public static class IsaacConsoleWindow {
     $window = [IntPtr]::Zero
     do {
         Start-Sleep -Milliseconds 200
-        $window = [IsaacConsoleWindow]::FindVisibleWindow('以撒 · 中文控制台 desktop-v1.4.3')
+        $window = [IsaacConsoleWindow]::FindVisibleWindow('以撒 · 中文控制台 desktop-v1.5.0')
         if ($window -ne [IntPtr]::Zero) { break }
         $process.Refresh()
         if ($process.HasExited) { throw ("MSHTA_EXITED: {0}" -f $process.ExitCode) }

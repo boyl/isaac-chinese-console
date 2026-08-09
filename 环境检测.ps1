@@ -41,11 +41,10 @@ foreach ($required in @(
     'desktop\app.css',
     'desktop\app.js',
     'desktop\catalog.js',
+    'desktop\objects.js',
     'desktop\state.js',
     'desktop\search.js',
-    'desktop\queue.js',
-    'desktop\generate-pinyin-aliases.ps1',
-    '启动以撒中文控制台.cmd'
+    'desktop\queue.js'
 )) {
     if (Test-Path -LiteralPath (Join-Path $packageDir $required)) {
         Add-CheckLine '通过' ("包内文件存在：{0}" -f $required)
@@ -75,7 +74,7 @@ catch {
     Add-CheckLine '错误' ("用户状态目录不可写：{0}" -f $stateDir)
 }
 
-$catalogCache = Join-Path $stateDir 'catalog-cache-v1.json'
+$catalogCache = Join-Path $stateDir 'catalog-v2.json'
 $startupLog = Join-Path $stateDir 'startup-error.log'
 if (Test-Path -LiteralPath $startupLog) {
     Add-CheckLine '警告' ("检测到 HTA 启动错误日志：{0}" -f $startupLog)
@@ -83,12 +82,13 @@ if (Test-Path -LiteralPath $startupLog) {
 if (Test-Path -LiteralPath $catalogCache) {
     try {
         $cache = Get-Content -LiteralPath $catalogCache -Raw | ConvertFrom-Json
-        Add-CheckLine '通过' ("EID 离线目录缓存：{0} 项，拼音={1}" -f $cache.itemCount, $cache.pinyinAvailable)
+        if ($cache.schemaVersion -ne 2 -or -not $cache.descriptions) { throw '缓存结构不是 catalog-v2' }
+        Add-CheckLine '通过' ("EID 详细说明缓存：{0} 条" -f $cache.descriptionCount)
     }
     catch { Add-CheckLine '警告' 'EID 离线目录缓存损坏，可在界面中重新导入。' }
 }
 else {
-    Add-CheckLine '警告' '尚未导入 EID；控制台仍可使用 74 个精选道具。'
+    Add-CheckLine '警告' '尚未导入 EID 说明；内置 1056 项目录仍可完整搜索与执行。'
 }
 
 $isaac = Get-Process -Name 'isaac-ng', 'isaac-ng-x64', 'isaac' -ErrorAction SilentlyContinue | Select-Object -First 1
