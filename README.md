@@ -1,65 +1,41 @@
-# 以撒中文控制台 desktop-v1.4.3
+# 以撒中文控制台 desktop-v1.5.0
 
-面向 Windows / Steam 版《The Binding of Isaac: Rebirth》的离线中文图形控制台。无需安装 Mod，不联网、不读取存档；工具会切换到游戏窗口并通过原生调试控制台提交命令。
+面向 Windows / Steam 版《The Binding of Isaac: Rebirth》的离线中文图形控制台。无需安装 Mod，不联网、不读取存档；工具通过游戏原生调试控制台提交命令。
 
-## 下载
+## 下载与启动
 
-- 推荐下载：[isaac-chinese-console-desktop-v1.4.3.zip](https://github.com/boyl/isaac-chinese-console/releases/download/desktop-v1.4.3/isaac-chinese-console-desktop-v1.4.3.zip)
-- 版本说明：[desktop-v1.4.3 Release](https://github.com/boyl/isaac-chinese-console/releases/tag/desktop-v1.4.3)
-- 下载后必须完整解压，再从解压目录运行 `START.cmd`；不要在 ZIP 预览窗口内启动。
+- 发布文件：`isaac-chinese-console-desktop-v1.5.0.zip`。
+- 必须完整解压 ZIP，再从文件资源管理器运行 `START.cmd`；不要在 ZIP 或聊天附件预览中启动。
+- 首次使用先运行 `一键环境检测.cmd`，再关闭游戏并运行 `开启游戏控制台.cmd`。
+- 启动游戏并进入一局，最后运行 `START.cmd`。
+
+详细步骤见 [README-使用教程.md](./README-使用教程.md)。
 
 ## 本版重点
 
-- v1.4.3 修复拆分后的外部脚本无法访问 HTA COM 对象、导致命令发送被误判为不可用的问题。
-- 继续使用纯英文 `START.cmd` 和 PowerShell 自检启动器；只有检测到真实可见窗口才报告成功。
-- Windows 脚本组件或 LocalAppData 被策略拦截时，界面进入可浏览的临时模式并显示明确诊断。
+- 15 个分类，与中文控制台 Mod v2.5.3 的内容模型对齐。
+- 内置 1056 个官方对象：721 个收藏品、188 个饰品、97 个卡牌/符文、50 个胶囊效果。
+- 不安装 EID 和中文控制台 Mod 也能按中文、英文、全拼、首字母、类型 ID 和完整命令搜索、收藏、入队和执行。
+- 使用 `c:182`、`t:1`、`k:1`、`p:0` 等类型化键，避免共享数字 ID 时串收藏或串详情。
+- 74 个精选收藏品保留原分类、排序和原创详细说明；同一对象在完整目录与精选分类共用状态。
+- EID 只提供可选详细效果说明，不再充当名称、拼音或完整目录来源。
+- 保留命令队列、方案、取消、部分恢复和最近 100 条提交历史。
+- 状态升级为 `%LOCALAPPDATA%\IsaacChineseConsole\state-v3.json`；旧数字收藏迁移为 `c:<id>`，旧文件保留用于回滚。
+- 删除运行时拼音探测、旧 EID 全目录合并、无类型数字 ID 推断及孤立文件。
 
-- 保留 v1.3.0 原有 11 个分类、74 个精选道具及排列顺序。
-- 支持从用户本机的 External Item Descriptions（EID）离线导入 732 个道具的中英文名、可用说明、全拼和首字母；缓存仅保存在 `%LOCALAPPDATA%\IsaacChineseConsole`。
-- 全局搜索支持中文、英文、拼音、首字母、ID 和原生命令；没有 EID 时仍可完整使用精选目录。
-- 控制台操作扩展为 68 项：8 个调试、8 个补给、45 个普通模式楼层和 7 个贪婪模式楼层。
-- 通用命令队列支持任意单行命令、排序、保存方案、取消和仅恢复未提交部分。
-- 只有 `giveitem`、`spawn` 可以重复 2–99 次；其他命令始终按 1 次提交。
-- 历史记录区分“请求次数”和“已提交次数”，不会把按键提交误报成游戏效果已验证。
+## 命令语义
 
-## 快速开始
+- 收藏品：`giveitem c<ID>`，可重复 1–99 次；可用 `remove c<ID>` 移除本体。
+- 饰品：`giveitem t<ID>`，固定 1 次；可用 `remove t<ID>` 移除本体。
+- 卡牌/符文：`giveitem k<ID>`，固定 1 次，不提供移除。
+- 胶囊效果：`giveitem p<ID>`，固定 1 次，不提供移除。
+- `spawn` 可重复 1–99 次。其他内置、未知或流程命令固定 1 次；风险标签只提示，不阻止合法单行命令入队。
+- `remove` 仅表示移除本体，不表示撤销，也不会回滚已产生的资源、实体、房间或生命变化。
+- “已提交”只表示工具完成输入与回车，实际效果仍需在游戏中确认。
 
-1. 将输入法切换为英文（半角）。
-2. 从 [Releases](https://github.com/boyl/isaac-chinese-console/releases/latest) 下载 ZIP 并完整解压。
-3. 双击 `一键环境检测.cmd`。
-4. 关闭游戏后运行 `开启游戏控制台.cmd`，确保 `EnableDebugConsole=1`。
-5. 启动游戏并进入一局，再在文件资源管理器中双击 `START.cmd`。聊天中的文件链接可能只会选中文件，不会执行脚本。
-6. 可直接使用 74 个精选道具；点击“导入 EID”可启用完整中文目录。
+## 兼容性
 
-完整说明见 [README-使用教程.md](./README-使用教程.md)。
-
-## 更新日志
-
-### desktop-v1.4.3（2026-08-08）
-
-- 修复模块化外部脚本中 `ActiveXObject` 不可见，导致界面误报“Windows 脚本组件被拦截”、无法发送命令的问题。
-- 新增 HTA 内联宿主桥，状态持久化、游戏检测、命令队列和 EID 导入统一复用经过验证的 COM 对象。
-- 增加宿主桥回归测试，覆盖外部模块没有全局 `ActiveXObject` 的真实 Trident/HTA 场景。
-- 已完成 Windows 实机启动与命令发送验收；分类、74 个精选道具、68 个控制台操作和命令语义保持不变。
-- 补充正式 Release 下载入口、安装说明和分发包校验信息。
-
-### desktop-v1.4.2（2026-08-08）
-
-- 增加纯英文 `START.cmd` 和可见窗口自检，启动失败时保留明确日志与非零错误码。
-- ActiveX 或 LocalAppData 被策略拦截时进入临时浏览模式，避免界面空白。
-
-### desktop-v1.4.0（2026-08-07）
-
-- 完成目录搜索、详情抽屉、响应式分页、EID 离线导入和状态持久化。
-- 增加通用 JSON 命令队列、取消、部分完成恢复、方案与完整历史。
-- 冻结原有 11 个分类及 74 个精选映射，并将内置控制台操作扩展至 68 项。
-
-## 安全语义
-
-- `remove c<ID>` 只移除道具，不会回滚拾取时产生的资源、实体、房间或生命变化。
-- `stage` 仅提供已核对的普通/贪婪白名单，不生成未知后缀组合。
-- 任意合法单行命令都可以加入队列；风险标签只提示，不阻止。建议在一次性测试存档中使用流程或 Lua 命令。
-- 本工具只确认输入是否成功提交到游戏窗口；实际道具、资源、楼层和实体效果应在游戏内确认。
+运行时使用 Windows 自带的 `mshta.exe`、Windows PowerShell 5.1、FileSystemObject 和 WScript.Shell，目标为 Windows 10/11。企业策略、精简系统或安全软件若禁用 HTA、ActiveX/Windows Script Host 或模拟按键，发送功能可能不可用；环境检测会给出明确结果。游戏与工具权限级别必须一致。
 
 ## 开发与验证
 
@@ -68,6 +44,24 @@
 & 'C:\Program Files\PowerShell\7\pwsh.exe' -NoLogo -NoProfile -File .\tools\build-desktop-package.ps1
 ```
 
-运行时仍只要求 Windows PowerShell 5.1 和 `mshta.exe`；PowerShell 7 仅用于仓库开发与自动测试。
+发布构建采用显式白名单，并阻断：ZIP 超过 131072 字节、解压后超过 327680 字节、包含校验文件后超过 20 个文件、运行模块孤立、PowerShell AST 解析失败或内部函数不可达。
 
-本项目与 Nicalis、Edmund McMillen、Valve、Steam 或 EID 项目无关联。《The Binding of Isaac》及相关名称归其权利人所有。本项目不会再分发 EID 原始文件或语言表。
+## 更新日志
+
+### desktop-v1.5.0（2026-08-09）
+
+- 内置 1056 项官方对象和构建期拼音索引，新增全部收藏品、饰品、卡牌/符文、胶囊效果分类。
+- EID 缓存升级为 `catalog-v2.json`，只保存类型化详细说明与来源元数据。
+- 用户状态升级为 `state-v3.json`，完成类型化收藏迁移和缓存损坏回退。
+- UI、队列与发送器统一四种对象命令的重复和移除规则。
+- 增加目录、搜索、迁移、EID 降级、队列 DryRun、可达性、孤立文件和发布体积测试。
+
+### desktop-v1.4.3（2026-08-08）
+
+- 修复模块化 HTA 外部脚本无法访问宿主 COM 对象的问题，并增加自检启动器、完整队列、部分恢复和 68 项控制台操作。
+
+## 第三方数据说明
+
+内置对象名称与搜索别名在构建阶段从用户本机已安装的游戏辅助数据整理为紧凑目录；发布包不包含 EID 原始 Lua 文件、Mod 源码或运行缓存。EID 只作为用户主动选择的本机说明增强来源。项目采用保守再分发策略；参见 [External Item Descriptions](https://github.com/wofsauge/External-Item-Descriptions) 与 [GitHub 关于无许可证仓库的说明](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository)。
+
+本项目与 Nicalis、Edmund McMillen、Valve、Steam 或 EID 项目无关联。《The Binding of Isaac》及相关名称归其权利人所有。

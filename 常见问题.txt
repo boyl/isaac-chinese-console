@@ -1,36 +1,21 @@
-以撒中文控制台 desktop-v1.4.3 · 常见问题
+以撒中文控制台 desktop-v1.5.0 · 常见问题
 
-0. 双击后没有窗口怎么办？
-先完整解压 ZIP，再在文件资源管理器中双击 START.cmd。不要从聊天文件链接或 ZIP 预览窗口直接执行。
-如果仍失败，请发送：%LOCALAPPDATA%\IsaacChineseConsole\launcher.log
+1. 没有窗口？完整解压后从文件资源管理器运行 START.cmd，查看 %LOCALAPPDATA%\IsaacChineseConsole\launcher.log。
 
-1. 没有安装 EID 能用吗？
-可以。74 个精选道具、68 个控制台操作、队列和手动命令都不依赖 EID。EID 只增强完整目录与搜索。
+2. 没 EID 或中文控制台 Mod 能用吗？可以。内置 1056 项名称、拼音、收藏、搜索、详情、队列和执行全部可用。EID 只补充说明。
 
-2. “导入 EID”会联网或复制 Mod 吗？
-不会。它只读取本机已安装的 EID，把精简搜索缓存写到：
-%LOCALAPPDATA%\IsaacChineseConsole\catalog-cache-v1.json
+3. EID 缓存在哪里？%LOCALAPPDATA%\IsaacChineseConsole\catalog-v2.json。它不复制 EID 原始文件，也不会联网。
 
-3. 为什么某些电脑没有全库拼音？
-生成全库拼音需要 Windows 中文输入组件。组件不可用时仍支持中文、英文、ID 和命令搜索，精选项仍带人工拼音别名。
+4. 为什么 c:1、t:1、k:1、p:1 都存在？数字 ID 会跨类型重复；c=收藏品、t=饰品、k=卡牌/符文、p=胶囊。
 
-4. 为什么 debug、stage、remove 或自定义命令次数会变成 1？
-只有 giveitem 和 spawn 可以重复。开关、流程和未知命令重复执行容易抵消或破坏当前局，因此 UI 与发送器都会归一为 1 次。
+5. 为什么次数变成 1？只有 giveitem c<ID> 与 spawn 允许重复；giveitem t/k/p<ID>、remove、debug、stage 与其他命令固定 1 次。
 
-5. “输入已提交”是否表示效果一定生效？
-不是。它表示工具完成了窗口聚焦、按键输入和回车。请在游戏内确认道具、资源、实体或楼层变化。
+6. 哪些对象能移除？收藏品用 remove c<ID>，饰品用 remove t<ID>。卡牌和胶囊不提供移除。remove 不会回滚已产生效果。
 
-6. 队列中途失败怎么办？
-不要重跑原队列。工具会自动把队列替换为“尚未提交”的剩余步骤和次数，确认游戏焦点后再继续。
+7. “已提交”表示生效吗？不是，只表示输入和回车完成，请在游戏内确认。
 
-7. 移除道具能撤销效果吗？
-不能保证。remove c<ID> 只移除道具本体，不会回滚已经增加的硬币、钥匙、炸弹、生命、生成实体或房间状态。
+8. 队列中途失败？不要重跑原队列；工具只保留尚未提交的步骤和次数。
 
-8. 收藏或方案保存在哪里？
-%LOCALAPPDATA%\IsaacChineseConsole\state-v2.json，并保留一个 .bak 备份。首次启动会尝试迁移 v1.3.0 的收藏和历史。
+9. 状态在哪里？%LOCALAPPDATA%\IsaacChineseConsole\state-v3.json，并保留 .bak；旧 state-v2.json 不会被删除。
 
-9. 自动发送失败怎么办？
-确认已经进入一局、控制台已开启、游戏与工具权限级别一致。也可以先在游戏中打开原生控制台，再选择“控制台已打开”模式。
-
-10. 安全软件提示 PowerShell/HTA 风险怎么办？
-本工具需要切换游戏窗口并模拟键盘，因此可能触发行为检测。所有运行文件均为可读文本；正式 ZIP 附带 SHA256SUMS.txt。
+10. 正常 Windows 都兼容吗？目标是 Windows 10/11。企业策略、精简系统或安全软件若禁用 mshta.exe、ActiveX/Windows Script Host 或模拟按键，发送会不可用；请先运行一键环境检测.cmd，并保持游戏与工具权限一致。
