@@ -4,7 +4,9 @@
 
 ## 下载与启动
 
-- 发布文件：`isaac-chinese-console-desktop-v1.5.0.zip`。
+- 推荐下载：[isaac-chinese-console-desktop-v1.5.0.zip](https://github.com/boyl/isaac-chinese-console/releases/download/desktop-v1.5.0/isaac-chinese-console-desktop-v1.5.0.zip)
+- 版本说明：[desktop-v1.5.0 Release](https://github.com/boyl/isaac-chinese-console/releases/tag/desktop-v1.5.0)
+- ZIP SHA-256：`5A9C19CC99DF7FAF7F962687076C379F85537D53091CD95BB63223003E0F1E28`
 - 必须完整解压 ZIP，再从文件资源管理器运行 `START.cmd`；不要在 ZIP 或聊天附件预览中启动。
 - 首次使用先运行 `一键环境检测.cmd`，再关闭游戏并运行 `开启游戏控制台.cmd`。
 - 启动游戏并进入一局，最后运行 `START.cmd`。
