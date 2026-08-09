@@ -20,6 +20,9 @@ try {
     Write-Job $jobPath ([ordered]@{
         schemaVersion = 1; jobId = 'dryrun-main'; consoleMode = 'auto'; steps = @(
             [ordered]@{ stepId='a'; label='repeat'; command='giveitem c182'; repeat=3; source='test' },
+            [ordered]@{ stepId='t'; label='trinket'; command='giveitem t1'; repeat=7; source='test' },
+            [ordered]@{ stepId='k'; label='card'; command='giveitem k1'; repeat=6; source='test' },
+            [ordered]@{ stepId='p'; label='pill'; command='giveitem p0'; repeat=5; source='test' },
             [ordered]@{ stepId='b'; label='toggle'; command='debug 3'; repeat=5; source='test' },
             [ordered]@{ stepId='c'; label='custom'; command='custom command'; repeat=9; source='test' }
         )
@@ -28,10 +31,13 @@ try {
     Assert-True ($LASTEXITCODE -eq 0) 'DryRun sender failed.'
     $status = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
     Assert-True ($status.state -eq 'completed') 'DryRun did not complete.'
-    Assert-True ($status.stepResults.Count -eq 3) 'Expected three step results.'
+    Assert-True ($status.stepResults.Count -eq 6) 'Expected six step results.'
     Assert-True ($status.stepResults[0].submitted -eq 3) 'giveitem repeat count changed.'
-    Assert-True ($status.stepResults[1].submitted -eq 1) 'debug must be limited to one.'
-    Assert-True ($status.stepResults[2].submitted -eq 1) 'unknown commands must be limited to one.'
+    Assert-True ($status.stepResults[1].submitted -eq 1) 'trinkets must be limited to one.'
+    Assert-True ($status.stepResults[2].submitted -eq 1) 'cards must be limited to one.'
+    Assert-True ($status.stepResults[3].submitted -eq 1) 'pills must be limited to one.'
+    Assert-True ($status.stepResults[4].submitted -eq 1) 'debug must be limited to one.'
+    Assert-True ($status.stepResults[5].submitted -eq 1) 'unknown commands must be limited to one.'
     Assert-True (-not (Test-Path -LiteralPath ($statusPath + '.tmp'))) 'Atomic status temporary file remained.'
 
     $legacyCommand = Join-Path $testRoot 'legacy.dat'
