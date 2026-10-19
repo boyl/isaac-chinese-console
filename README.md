@@ -1,5 +1,3 @@
-![GitHub Release Downloads](https://img.shields.io/github/downloads/boyl/isaac-chinese-console/total?label=Downloads&color=blue)
-
 # 以撒中文控制台 desktop-v1.5.1
 
 面向 Windows / Steam 版《The Binding of Isaac: Rebirth》的离线中文图形控制台。无需安装 Mod，不联网、不读取存档；工具通过游戏原生调试控制台提交命令。
