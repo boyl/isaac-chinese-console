@@ -1,4 +1,4 @@
-![GitHub Release Downloads](https://img.shields.io/github/downloads/boyl/isaac-chinese-console/total?label=Downloads&color=blue)
+[![Downloads](https://img.shields.io/github/downloads/boyl/isaac-chinese-console/total?label=Downloads&color=blue)](https://github.com/boyl/isaac-chinese-console/releases) [![Stars](https://img.shields.io/github/stars/boyl/isaac-chinese-console?label=Stars)](https://github.com/boyl/isaac-chinese-console/stargazers) [![Latest Release](https://img.shields.io/github/v/release/boyl/isaac-chinese-console?label=Release)](https://github.com/boyl/isaac-chinese-console/releases/latest) [![License](https://img.shields.io/github/license/boyl/isaac-chinese-console?label=License)](https://github.com/boyl/isaac-chinese-console/blob/HEAD/LICENSE)
 
 # 以撒中文控制台 desktop-v1.5.1
 
